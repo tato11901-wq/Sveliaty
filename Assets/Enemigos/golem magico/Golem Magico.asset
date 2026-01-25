@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4b49902360aca114ca57cefec09dacb9, type: 3}
+  m_Name: Golem Magico
+  m_EditorClassIdentifier: 
+  id: 8
+  displayName: Golem Magico
+  affinityType: 2
+  affinityRelations:
+  - type: 2
+    multiplier: 3
+  enemyTierData:
+  - {fileID: 11400000, guid: 6f0b453b4cad87d42948d177f143d6bc, type: 2}
+  - {fileID: 11400000, guid: f2d5e2e37ffb30a479e04d980ee39674, type: 2}
+  - {fileID: 11400000, guid: b82873f704b560d4bae5dc1b5644aef3, type: 2}

@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4b49902360aca114ca57cefec09dacb9, type: 3}
+  m_Name: Guerrero Zorro
+  m_EditorClassIdentifier: 
+  id: 9
+  displayName: Guerrero Zorro
+  affinityType: 1
+  affinityRelations:
+  - type: 1
+    multiplier: 3
+  enemyTierData:
+  - {fileID: 11400000, guid: 59a8c96d5b5105e4693bc4cb3299899a, type: 2}
+  - {fileID: 11400000, guid: faf7ac66a95a8cf4eb5c02d784c1cf4c, type: 2}
+  - {fileID: 11400000, guid: 78c13880563e73c4788f4111466c776c, type: 2}
