@@ -22,6 +22,7 @@ public class CombatManager : MonoBehaviour
     public event Action<bool, int, AffinityType, int> OnCombatEnd; // (victory, finalScore, cardReward, lifeLost)
     public event Action<int> OnAttemptsChanged; // (remainingAttempts)
     public event Action<int> OnWaitingForCardSelection; // (finalScore) - Nuevo evento
+    public event Action<int, int, int, int, EnemyInstance> GameOver; // Final score, Final Cards(Fuerza, Agilidad, Destreza), defeated by this enemy
 
     void Start()
     {
@@ -276,10 +277,26 @@ void EndCombat(bool victory, int finalScore, float lastMultiplier)
     {
         // Aplicar daño al jugador
         playerCombatData.playerLife -= currentEnemy.enemyTierData.failureDamage;
-
-        OnCombatEnd?.Invoke(false, finalScore, rewardCard, currentEnemy.enemyTierData.failureDamage);
+        if (playerCombatData.playerLife > 0) OnCombatEnd?.Invoke(false, finalScore, rewardCard, currentEnemy.enemyTierData.failureDamage);
+        else GameOver?.Invoke(finalScore, PlayerCombatData.cards[AffinityType.Fuerza], PlayerCombatData.cards[AffinityType.Agilidad], PlayerCombatData.cards[AffinityType.Destreza], currentEnemy);
     }
 }
+
+    ///<summary>
+    /// Game Over si la vida llega a 0
+    ///</summary>
+    
+    public void EndRun()
+    {
+        int finalScore = playerCombatData.score;
+        int finalFuerza = PlayerCombatData.cards[AffinityType.Fuerza];
+        int finalAgilidad = PlayerCombatData.cards[AffinityType.Agilidad];
+        int finalDestreza = PlayerCombatData.cards[AffinityType.Destreza];
+
+        GameOver?.Invoke(finalScore, finalFuerza, finalAgilidad, finalDestreza, currentEnemy);
+    }
+    
+
     /// <summary>
     /// Método público para que la UI confirme la selección de carta
     /// </summary>
