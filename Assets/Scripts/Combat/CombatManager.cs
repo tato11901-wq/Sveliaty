@@ -7,14 +7,14 @@ public class CombatManager : MonoBehaviour
     public EnemyDatabase enemyDatabase;
 
     [Header("Combat Settings")]
-    public CombatMode combatMode = CombatMode.Passive;
+    private CombatMode combatMode = CombatMode.Passive;
     [Range(0, 100)] public float randomCardChance = 30f;
 
     // Estado del combate
     private EnemyInstance currentEnemy;
     private PlayerCombatData playerCombatData;
     private bool combatEnded = false;
-    private bool waitingForCardSelection = false; // Nuevo estado
+    private bool waitingForCardSelection = false;
 
     // Eventos para la UI
     public event Action<EnemyInstance> OnCombatStart;
@@ -24,20 +24,38 @@ public class CombatManager : MonoBehaviour
     public event Action<int> OnWaitingForCardSelection; // (finalScore) - Nuevo evento
     public event Action<int, int, int, int, EnemyInstance> GameOver; // Final score, Final Cards(Fuerza, Agilidad, Destreza), defeated by this enemy
 
-    void Start()
+    /// <summary>
+    /// Inicia una nueva run con el modo especificado
+    /// Llamado por el GameManager al comenzar el juego
+    /// </summary>
+    public void StartNewRun(CombatMode mode)
     {
-        InitializePlayerCards();
+        Debug.Log($"🎮 Iniciando nueva run en modo: {mode}");
+        
+        // Establecer el modo de combate para toda la run
+        combatMode = mode;
+        
+        // Reiniciar datos del jugador
+        InitializePlayerData();
+        
+        // Iniciar primer combate
         StartRandomCombat();
     }
 
-    void InitializePlayerCards()
+    void InitializePlayerData()
     {
         playerCombatData = new PlayerCombatData();
         
-        // Ejemplo: cartas iniciales (esto vendría de tu sistema de guardado)
+        // Resetear cartas a 0
         PlayerCombatData.cards[AffinityType.Fuerza] = 0;
         PlayerCombatData.cards[AffinityType.Agilidad] = 0;
         PlayerCombatData.cards[AffinityType.Destreza] = 0;
+        
+        // Resetear vida y score
+        playerCombatData.playerLife = playerCombatData.playerMaxLife;
+        playerCombatData.score = 0;
+        
+        Debug.Log($"Vida inicializada: {playerCombatData.playerLife}/{playerCombatData.playerMaxLife}");
     }
 
     /// <summary>
@@ -47,7 +65,7 @@ public class CombatManager : MonoBehaviour
     {
         if (enemyDatabase == null)
         {
-            Debug.LogError("❌ No hay EnemyDatabase asignado");
+            Debug.LogError("No hay EnemyDatabase asignado");
             return;
         }
 
@@ -55,7 +73,7 @@ public class CombatManager : MonoBehaviour
 
         if (randomEnemy == null)
         {
-            Debug.LogError("❌ No se pudo obtener enemigo aleatorio");
+            Debug.LogError("No se pudo obtener enemigo aleatorio");
             return;
         }
 
@@ -72,7 +90,7 @@ public class CombatManager : MonoBehaviour
         // Si no existe el tier solicitado, usar el primer tier disponible
         if (tierData == null)
         {
-            Debug.LogWarning($"⚠️ Tier {tier} no encontrado para {enemyData.displayName}. Usando tier disponible.");
+            Debug.LogWarning($"Tier {tier} no encontrado para {enemyData.displayName}. Usando tier disponible.");
             
             if (enemyData.enemyTierData != null && enemyData.enemyTierData.Length > 0)
             {
@@ -81,7 +99,7 @@ public class CombatManager : MonoBehaviour
             }
             else
             {
-                Debug.LogError($"❌ {enemyData.displayName} no tiene ningún tier configurado");
+                Debug.LogError($"{enemyData.displayName} no tiene ningún tier configurado");
                 return;
             }
         }
@@ -89,7 +107,7 @@ public class CombatManager : MonoBehaviour
         currentEnemy = new EnemyInstance(enemyData, tierData);
         combatEnded = false;
 
-        Debug.Log($"\n🎮 BOSS RUSH: {currentEnemy.enemyData.displayName} ({tierData.enemyTier})");
+        Debug.Log($"\nBOSS RUSH: {currentEnemy.enemyData.displayName} ({tierData.enemyTier})");
 
         // Notificar a la UI
         OnCombatStart?.Invoke(currentEnemy);
@@ -110,33 +128,18 @@ public class CombatManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Cambiar entre modos de combate
-    /// </summary>
-    public void ToggleCombatMode()
-    {
-        combatMode = (combatMode == CombatMode.Passive) 
-            ? CombatMode.PlayerChooses 
-            : CombatMode.Passive;
-
-        Debug.Log($"🔄 Modo cambiado a: {combatMode}");
-
-        // Reiniciar combate con el nuevo modo
-        StartRandomCombat();
-    }
-
-    /// <summary>
     /// Seleccionar tipo de ataque (solo en modo PlayerChooses)
     /// </summary>
     public void SelectAttackType(AffinityType type)
     {
         if (combatMode != CombatMode.PlayerChooses)
         {
-            Debug.LogWarning("⚠️ Solo puedes seleccionar ataque en modo PlayerChooses");
+            Debug.LogWarning("Solo puedes seleccionar ataque en modo PlayerChooses");
             return;
         }
 
         playerCombatData.selectedAttackType = type;
-        Debug.Log($"🎯 Ataque seleccionado: {type}");
+        Debug.Log($"Ataque seleccionado: {type}");
     }
 
     AffinityType GetAttackType()
@@ -304,14 +307,14 @@ void EndCombat(bool victory, int finalScore, float lastMultiplier)
     {
         if (!waitingForCardSelection)
         {
-            Debug.LogWarning("⚠️ No hay selección de carta pendiente");
+            Debug.LogWarning("No hay selección de carta pendiente");
             return;
         }
 
         // Dar la carta seleccionada
         PlayerCombatData.cards[selectedCard]++;
         
-        Debug.Log($"🎁 ¡Obtienes 1 carta de {selectedCard}! Total: {PlayerCombatData.cards[selectedCard]}");
+        Debug.Log($"¡Obtienes 1 carta de {selectedCard}! Total: {PlayerCombatData.cards[selectedCard]}");
         
         // Resetear estado de espera
         waitingForCardSelection = false;
@@ -363,4 +366,6 @@ void EndCombat(bool victory, int finalScore, float lastMultiplier)
     public EnemyInstance GetCurrentEnemy() => currentEnemy;
     public bool IsCombatEnded() => combatEnded;
     public CombatMode GetCombatMode() => combatMode;
+    public int GetPlayerLife() => playerCombatData?.playerLife ?? 0;
+    public int GetPlayerMaxLife() => playerCombatData?.playerMaxLife ?? 100;
 }

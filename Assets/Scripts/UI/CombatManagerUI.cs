@@ -16,6 +16,7 @@ public class CombatUIManager : MonoBehaviour
     public TextMeshProUGUI escaladoText;
     public TextMeshProUGUI intentosText;
     public TextMeshProUGUI dadosText;
+    public TextMeshProUGUI vidaActualText; // NUEVO: Muestra vida actual/máxima
 
     [Header("Buttons - Modo Passive")]
     public GameObject passiveModePanel;
@@ -37,8 +38,7 @@ public class CombatUIManager : MonoBehaviour
     public Color colorNeutral = Color.white;     // Neutral
 
     [Header("General Buttons")]
-    public Button cambioModoButton;
-    public TextMeshProUGUI cambioModoButtonText;
+    // Botón de cambio de modo ELIMINADO - ahora se selecciona al inicio
 
     [Header("Results Display")]
     public TextMeshProUGUI resultadoDadosText;
@@ -70,13 +70,8 @@ public class CombatUIManager : MonoBehaviour
         combatManager.OnAttemptsChanged += HandleAttemptsChanged;
         combatManager.OnWaitingForCardSelection += HandleWaitingForCardSelection;
 
-        // Configurar botones
+        // Configurar botones de ataque
         attackButton.onClick.AddListener(() => combatManager.PlayerAttempt());
-        cambioModoButton.onClick.AddListener(() => 
-        {
-            combatManager.ToggleCombatMode();
-            UpdateModeUI();
-        });
 
         fuerzaButton.onClick.AddListener(() => 
         {
@@ -149,6 +144,9 @@ public class CombatUIManager : MonoBehaviour
         intentosText.text = enemy.attemptsRemaining.ToString();
         dadosText.text = enemy.enemyTierData.diceCount.ToString();
 
+        // Actualizar vida del jugador
+        UpdatePlayerLifeUI();
+
         // Limpiar resultados
         resultadoDadosText.text = "-";
         resultadoAtaqueText.text = "-";
@@ -187,6 +185,9 @@ void HandleAttackResult(int roll, int bonus, int total, float multiplier)
 
     void HandleCombatEnd(bool victory, int finalScore, AffinityType rewardCard, int lifeLost)
 {
+    // Actualizar vida del jugador
+    UpdatePlayerLifeUI();
+
     if (victory)
     {
         passiveEndPanel.SetActive(true);
@@ -255,17 +256,16 @@ void HandleAttackResult(int roll, int bonus, int total, float multiplier)
         {
             passiveModePanel.SetActive(true);
             playerChoosePanel.SetActive(false);
-            cambioModoButtonText.text = "Cambio de modo\n(PlayerChooses)";
         }
         else
         {
             passiveModePanel.SetActive(false);
             playerChoosePanel.SetActive(true);
-            cambioModoButtonText.text = "Cambio de modo\n(Passive)";
         }
 
         UpdateCardsDisplay();
         UpdateAffinitiesUI();
+        UpdatePlayerLifeUI();
     }
 
     void UpdateCardsDisplay()
@@ -328,4 +328,17 @@ public void UpdateAffinitiesUI()
         UpdateButtonColor(destrezaButton, AffinityType.Destreza, enemy);
     }
 }
+
+    /// <summary>
+    /// Actualiza el display de vida del jugador
+    /// </summary>
+    void UpdatePlayerLifeUI()
+    {
+        if (vidaActualText != null)
+        {
+            int currentLife = combatManager.GetPlayerLife();
+            int maxLife = combatManager.GetPlayerMaxLife();
+            vidaActualText.text = $"Vida: {currentLife}/{maxLife}";
+        }
+    }
 }
