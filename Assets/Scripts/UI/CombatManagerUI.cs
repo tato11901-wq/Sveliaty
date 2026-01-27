@@ -61,64 +61,81 @@ public class CombatUIManager : MonoBehaviour
     public TextMeshProUGUI defeatMessageText;
     public Button defeatNextEnemyButton;
 
-    void Start()
+void Start()
+{
+    // Configurar botones (solo una vez)
+    attackButton.onClick.AddListener(() => combatManager.PlayerAttempt());
+
+    fuerzaButton.onClick.AddListener(() =>
     {
-        // Suscribirse a eventos del CombatManager
-        combatManager.OnCombatStart += HandleCombatStart;
-        combatManager.OnAttackResult += HandleAttackResult;
-        combatManager.OnCombatEnd += HandleCombatEnd;
-        combatManager.OnAttemptsChanged += HandleAttemptsChanged;
-        combatManager.OnWaitingForCardSelection += HandleWaitingForCardSelection;
+        combatManager.SelectAttackType(AffinityType.Fuerza);
+        combatManager.PlayerAttempt();
+        UpdateAffinitiesUI();
+    });
 
-        // Configurar botones de ataque
-        attackButton.onClick.AddListener(() => combatManager.PlayerAttempt());
+    agilidadButton.onClick.AddListener(() =>
+    {
+        combatManager.SelectAttackType(AffinityType.Agilidad);
+        combatManager.PlayerAttempt();
+        UpdateAffinitiesUI();
+    });
 
-        fuerzaButton.onClick.AddListener(() => 
-        {
-            combatManager.SelectAttackType(AffinityType.Fuerza);
-            combatManager.PlayerAttempt();
-            UpdateAffinitiesUI();
-        });
+    destrezaButton.onClick.AddListener(() =>
+    {
+        combatManager.SelectAttackType(AffinityType.Destreza);
+        combatManager.PlayerAttempt();
+        UpdateAffinitiesUI();
+    });
 
-        agilidadButton.onClick.AddListener(() => 
-        {
-            combatManager.SelectAttackType(AffinityType.Agilidad);
-            combatManager.PlayerAttempt();
-            UpdateAffinitiesUI();
-        });
-
-        destrezaButton.onClick.AddListener(() => 
-        {
-            combatManager.SelectAttackType(AffinityType.Destreza);
-            combatManager.PlayerAttempt();
-            UpdateAffinitiesUI();
-        });
-
-        // Botones de siguiente enemigo
-        passiveNextEnemyButton.onClick.AddListener(() => 
-        {
-            passiveEndPanel.SetActive(false);
-            combatManager.NextEnemy();
-        });
-
-        defeatNextEnemyButton.onClick.AddListener(() => 
-        {
-            defeatPanel.SetActive(false);
-            combatManager.NextEnemy();
-        });
-
-        // Botones de selección de carta (recompensa en modo PlayerChooses)
-        selectFuerzaButton.onClick.AddListener(() => SelectCard(AffinityType.Fuerza));
-        selectAgilidadButton.onClick.AddListener(() => SelectCard(AffinityType.Agilidad));
-        selectDestrezaButton.onClick.AddListener(() => SelectCard(AffinityType.Destreza));
-
-        // Inicializar UI
-        UpdateModeUI();
+    passiveNextEnemyButton.onClick.AddListener(() =>
+    {
         passiveEndPanel.SetActive(false);
-        playerChoosesVictoryPanel.SetActive(false);
-        defeatPanel.SetActive(false);
-    }
+        combatManager.NextEnemy();
+    });
 
+    defeatNextEnemyButton.onClick.AddListener(() =>
+    {
+        defeatPanel.SetActive(false);
+        combatManager.NextEnemy();
+    });
+
+    selectFuerzaButton.onClick.AddListener(() => SelectCard(AffinityType.Fuerza));
+    selectAgilidadButton.onClick.AddListener(() => SelectCard(AffinityType.Agilidad));
+    selectDestrezaButton.onClick.AddListener(() => SelectCard(AffinityType.Destreza));
+}
+
+private void OnEnable()
+{
+    if (combatManager == null) return;
+
+    combatManager.OnCombatStart += HandleCombatStart;
+    combatManager.OnAttackResult += HandleAttackResult;
+    combatManager.OnCombatEnd += HandleCombatEnd;
+    combatManager.OnAttemptsChanged += HandleAttemptsChanged;
+    combatManager.OnWaitingForCardSelection += HandleWaitingForCardSelection;
+
+    // Sincronización visual
+    passiveEndPanel.SetActive(false);
+    playerChoosesVictoryPanel.SetActive(false);
+    defeatPanel.SetActive(false);
+
+    // Sincronizar combate si ya existe
+    if (combatManager.HasActiveEnemy())
+    {
+        HandleCombatStart(combatManager.GetCurrentEnemy());
+    }
+}
+
+private void OnDisable()
+{
+    if (combatManager == null) return;
+
+    combatManager.OnCombatStart -= HandleCombatStart;
+    combatManager.OnAttackResult -= HandleAttackResult;
+    combatManager.OnCombatEnd -= HandleCombatEnd;
+    combatManager.OnAttemptsChanged -= HandleAttemptsChanged;
+    combatManager.OnWaitingForCardSelection -= HandleWaitingForCardSelection;
+}
     void OnDestroy()
     {
         // Desuscribirse
@@ -143,6 +160,9 @@ public class CombatUIManager : MonoBehaviour
         escaladoText.text = GetEscaladoText(enemy);
         intentosText.text = enemy.attemptsRemaining.ToString();
         dadosText.text = enemy.enemyTierData.diceCount.ToString();
+
+        UpdateModeUI();
+
 
         // Actualizar vida del jugador
         UpdatePlayerLifeUI();

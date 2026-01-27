@@ -30,7 +30,7 @@ public class CombatManager : MonoBehaviour
     /// </summary>
     public void StartNewRun(CombatMode mode)
     {
-        Debug.Log($"🎮 Iniciando nueva run en modo: {mode}");
+        Debug.Log($"Iniciando nueva run en modo: {mode}");
         
         // Establecer el modo de combate para toda la run
         combatMode = mode;
@@ -50,6 +50,15 @@ public class CombatManager : MonoBehaviour
         PlayerCombatData.cards[AffinityType.Fuerza] = 0;
         PlayerCombatData.cards[AffinityType.Agilidad] = 0;
         PlayerCombatData.cards[AffinityType.Destreza] = 0;
+
+        //Añadir 5 cartas iniciales aleatorias
+
+        for (int i = 0; i < 5; i++)
+        {
+            AffinityType randomType = GetRandomAffinityType();
+            PlayerCombatData.cards[randomType]++;
+            Debug.Log($"Carta inicial {i + 1}: {randomType}");
+        }
         
         // Resetear vida y score
         playerCombatData.playerLife = playerCombatData.playerMaxLife;
@@ -81,7 +90,7 @@ public class CombatManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Inicia un combate específico
+    /// Inicia un combate
     /// </summary>
     void StartCombat(EnemyData enemyData, EnemyTier tier)
     {
@@ -103,7 +112,7 @@ public class CombatManager : MonoBehaviour
                 return;
             }
         }
-
+        
         currentEnemy = new EnemyInstance(enemyData, tierData);
         combatEnded = false;
 
@@ -361,6 +370,12 @@ void EndCombat(bool victory, int finalScore, float lastMultiplier)
     {
         return PlayerCombatData.cards[type];
     }
+
+        public bool HasActiveEnemy()
+    {
+        return currentEnemy != null;
+    }
+
 
     // GETTERS para la UI
     public EnemyInstance GetCurrentEnemy() => currentEnemy;
