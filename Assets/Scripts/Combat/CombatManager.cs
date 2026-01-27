@@ -15,12 +15,11 @@ public class CombatManager : MonoBehaviour
     private PlayerCombatData playerCombatData;
     private bool combatEnded = false;
     private bool waitingForCardSelection = false; // Nuevo estado
-    private int pendingFinalScore = 0; // Guardar score mientras espera selección
 
     // Eventos para la UI
     public event Action<EnemyInstance> OnCombatStart;
     public event Action<int, int, int, float> OnAttackResult; // (roll, bonus, total, multiplier)
-    public event Action<bool, int, AffinityType> OnCombatEnd; // (victory, finalScore, cardReward)
+    public event Action<bool, int, AffinityType, int> OnCombatEnd; // (victory, finalScore, cardReward, lifeLost)
     public event Action<int> OnAttemptsChanged; // (remainingAttempts)
     public event Action<int> OnWaitingForCardSelection; // (finalScore) - Nuevo evento
 
@@ -205,7 +204,8 @@ public void PlayerAttempt()
     // Evaluar con el total final
     if (totalFinal >= currentEnemy.enemyTierData.healthThreshold)
     {
-        EndCombat(true, totalFinal, multiplier);
+        playerCombatData.score += 1; // Incrementar score de enemigos derrotados
+        EndCombat(true, playerCombatData.score, multiplier);
     }
     else
     {
@@ -214,7 +214,7 @@ public void PlayerAttempt()
 
         if (currentEnemy.attemptsRemaining <= 0)
         {
-            EndCombat(false, totalFinal, multiplier);
+            EndCombat(false, playerCombatData.score, multiplier);
         }
     }
 }
@@ -240,7 +240,7 @@ void EndCombat(bool victory, int finalScore, float lastMultiplier)
         {
             rewardCard = GetRandomAffinityType();
             PlayerCombatData.cards[rewardCard]++;
-            OnCombatEnd?.Invoke(victory, finalScore, rewardCard);
+            OnCombatEnd?.Invoke(victory, finalScore, rewardCard, 0);
         }
         else if (combatMode == CombatMode.PlayerChooses)
         {
@@ -250,7 +250,6 @@ void EndCombat(bool victory, int finalScore, float lastMultiplier)
             {
                 // Victoria por DEBILIDAD: Elige carta
                 waitingForCardSelection = true;
-                pendingFinalScore = finalScore;
                 OnWaitingForCardSelection?.Invoke(finalScore);
                 Debug.Log("¡Debilidad explotada! Elige tu carta.");
             }
@@ -262,20 +261,23 @@ void EndCombat(bool victory, int finalScore, float lastMultiplier)
                     rewardCard = GetRandomAffinityType();
                     PlayerCombatData.cards[rewardCard]++;
                     Debug.Log($"Victoria normal. Suerte: Obtienes carta de {rewardCard}");
-                    OnCombatEnd?.Invoke(true, finalScore, rewardCard);
+                    OnCombatEnd?.Invoke(true, finalScore, rewardCard, 0);
                 }
                 else
                 {
                     Debug.Log("Victoria normal. No obtienes carta (no explotaste debilidad).");
                     // Llamamos a OnCombatEnd con "default" para indicar que no hubo carta
-                    OnCombatEnd?.Invoke(true, finalScore, default); 
+                    OnCombatEnd?.Invoke(true, finalScore, default, 0); 
                 }
             }
         }
     }
     else
     {
-        OnCombatEnd?.Invoke(false, finalScore, rewardCard);
+        // Aplicar daño al jugador
+        playerCombatData.playerLife -= currentEnemy.enemyTierData.failureDamage;
+
+        OnCombatEnd?.Invoke(false, finalScore, rewardCard, currentEnemy.enemyTierData.failureDamage);
     }
 }
     /// <summary>
@@ -298,7 +300,7 @@ void EndCombat(bool victory, int finalScore, float lastMultiplier)
         waitingForCardSelection = false;
         
         // Notificar UI con la carta seleccionada
-        OnCombatEnd?.Invoke(true, pendingFinalScore, selectedCard);
+        OnCombatEnd?.Invoke(true, playerCombatData.score, selectedCard, 0);
     }
 
     /// <summary>

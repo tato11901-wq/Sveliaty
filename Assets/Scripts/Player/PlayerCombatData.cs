@@ -12,5 +12,9 @@ public class PlayerCombatData
         };
 
     public AffinityType selectedAttackType;
+
+    public int playerLife = 100;
+    public int playerMaxLife = 100;
+    public int score = 0; //Cantidad de enemigos derrotados
 }
 

@@ -185,7 +185,7 @@ void HandleAttackResult(int roll, int bonus, int total, float multiplier)
     UpdateAffinitiesUI();
 }
 
-    void HandleCombatEnd(bool victory, int finalScore, AffinityType rewardCard)
+    void HandleCombatEnd(bool victory, int finalScore, AffinityType rewardCard, int lifeLost)
 {
     if (victory)
     {
@@ -208,6 +208,12 @@ void HandleAttackResult(int roll, int bonus, int total, float multiplier)
     {
         defeatPanel.SetActive(true);
         defeatMessageText.text = $"DERROTA\n\nPuntuación: {finalScore}";
+
+        if (lifeLost > 0)
+        {
+            
+            defeatMessageText.text += $"\n\nPerdiste {lifeLost} vida.";
+        }
     }
     
     UpdateCardsDisplay();
