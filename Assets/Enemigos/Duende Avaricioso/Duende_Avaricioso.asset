@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Duende_Avaricioso
   m_EditorClassIdentifier: 
   id: 3
-  displayName: 
+  displayName: Duende Avaricioso
   affinityType: 0
   affinityRelations:
   - type: 0
