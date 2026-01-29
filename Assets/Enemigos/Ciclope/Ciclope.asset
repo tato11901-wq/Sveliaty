@@ -14,11 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: 2
   displayName: Ciclope Perezoso
-  affinityType: 2
+  affinityType: 0
   affinityRelations:
   - type: 0
-    multiplier: 1
-  - type: 2
     multiplier: 3
   enemyTierData:
   - {fileID: 11400000, guid: 48e861f444718304abe6969a3f6e03a9, type: 2}

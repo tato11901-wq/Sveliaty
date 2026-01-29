@@ -14,14 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: 11
   displayName: Slime
-  affinityType: 0
+  affinityType: 2
   affinityRelations:
   - type: 0
-    multiplier: 3
+    multiplier: 1
   - type: 1
     multiplier: 2
   - type: 2
-    multiplier: 2
+    multiplier: 3
   enemyTierData:
   - {fileID: 11400000, guid: ec25ccefdf0cceb4b94abca52724eb4e, type: 2}
   - {fileID: 11400000, guid: 6c27fb4a752702d4d9e7f685311f2498, type: 2}

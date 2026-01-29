@@ -14,9 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: 10
   displayName: Serpiente
-  affinityType: 0
+  affinityType: 1
   affinityRelations:
-  - type: 0
+  - type: 1
     multiplier: 3
   enemyTierData:
   - {fileID: 11400000, guid: eec34b4f5c7d23e4b97014bfd8f8cea2, type: 2}

@@ -17,4 +17,4 @@ MonoBehaviour:
   healthThreshold: 6
   diceCount: 2
   maximunDiceThrow: 2
-  failureDamage: 0
+  failureDamage: 5

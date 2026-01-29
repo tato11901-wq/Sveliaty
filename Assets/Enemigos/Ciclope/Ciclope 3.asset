@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   enemyTier: 2
   sprite: {fileID: 21300000, guid: a0b7a1ae407ce714fbfea54631395a60, type: 3}
-  healthThreshold: 30
-  diceCount: 4
-  maximunDiceThrow: 3
-  failureDamage: 0
+  healthThreshold: 34
+  diceCount: 3
+  maximunDiceThrow: 2
+  failureDamage: 30

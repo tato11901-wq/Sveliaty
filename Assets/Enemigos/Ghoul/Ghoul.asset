@@ -14,9 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: 7
   displayName: Ghoul
-  affinityType: 1
+  affinityType: 0
   affinityRelations:
-  - type: 1
+  - type: 0
     multiplier: 3
   enemyTierData:
   - {fileID: 11400000, guid: 22cf0e2b695be32488278ea5f5dc1c6a, type: 2}

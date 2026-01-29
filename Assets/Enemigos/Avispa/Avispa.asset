@@ -14,12 +14,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: 1
   displayName: Avispa
-  affinityType: 0
+  affinityType: 1
   affinityRelations:
-  - type: 0
-    multiplier: 3
+  - type: 2
+    multiplier: 1
   - type: 1
-    multiplier: 0
+    multiplier: 3
   enemyTierData:
   - {fileID: 11400000, guid: f8523efe212ae2145a5acd098ba1cf50, type: 2}
   - {fileID: 11400000, guid: ed2754f2065a68544bd8f8332283debe, type: 2}
