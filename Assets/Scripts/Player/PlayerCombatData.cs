@@ -15,6 +15,6 @@ public class PlayerCombatData
 
     public int playerLife = 100;
     public int playerMaxLife = 100;
-    public int score = 0; //Cantidad de enemigos derrotados
+    public int score = 0; //Puntuacion del jugador 
 }
 

@@ -1,5 +1,6 @@
 using UnityEngine;
 using System;
+using UnityEngine.SocialPlatforms.Impl;
 
 public class CombatManager : MonoBehaviour
 {
@@ -217,7 +218,7 @@ public void PlayerAttempt()
     // Evaluar con el total final
     if (totalFinal >= currentEnemy.enemyTierData.healthThreshold)
     {
-        playerCombatData.score += 1; // Incrementar score de enemigos derrotados
+        playerCombatData.score += CalculateScorePerCombat(multiplier); // Incrementar score de enemigos derrotados
         EndCombat(true, playerCombatData.score, multiplier);
     }
     else
@@ -361,6 +362,34 @@ void EndCombat(bool victory, int finalScore, float lastMultiplier)
             : playerCombatData.selectedAttackType;
 
         return PlayerCombatData.cards[type];
+    }
+
+    /// <summary>
+    /// Calcular puntuación por combate según el tier del enemigo y condiciones de victoria
+    /// </summary>
+
+    public int CalculateScorePerCombat(float multiplier)
+    {int Newscore = 0;
+
+        if(currentEnemy.enemyTierData.enemyTier == EnemyTier.Tier_1)
+        {
+            Newscore = 1;
+        }
+        else if(currentEnemy.enemyTierData.enemyTier == EnemyTier.Tier_2)
+        {
+            Newscore = 2;
+        }
+        else if(currentEnemy.enemyTierData.enemyTier == EnemyTier.Tier_3)
+        {
+            Newscore = 3;
+        }
+
+        if(multiplier >= 1.5f)
+        {
+            Newscore += 1; // Bonificación por explotar debilidad
+        }
+
+        return Newscore;
     }
 
     /// <summary>

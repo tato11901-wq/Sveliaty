@@ -19,7 +19,7 @@ MonoBehaviour:
   - type: 0
     multiplier: 1
   - type: 1
-    multiplier: 2
+    multiplier: 0
   - type: 2
     multiplier: 3
   enemyTierData:
