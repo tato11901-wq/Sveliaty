@@ -23,5 +23,6 @@ public enum EnemyTier
 public enum CombatMode
 {
     Passive,       // Sistema simple: suma automática
-    PlayerChooses  // Sistema avanzado: con multiplicadores
+    PlayerChooses,  // Sistema avanzado: con multiplicadores
+    TraditionalRPG // Sistema RPG tradicional
 }

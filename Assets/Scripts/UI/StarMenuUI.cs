@@ -11,6 +11,7 @@ public class StartMenuUI : MonoBehaviour
     [Header("Referencias")]
     public Button passiveModeButton;
     public Button playerChoosesModeButton;
+    public Button traditionalRPGModeButton;
     public TextMeshProUGUI titleText;
 
     [Header("Textos Opcionales")]
@@ -28,6 +29,11 @@ public class StartMenuUI : MonoBehaviour
         if (playerChoosesModeButton != null)
         {
             playerChoosesModeButton.onClick.AddListener(() => StartGame(CombatMode.PlayerChooses));
+        }
+
+        if (traditionalRPGModeButton != null)
+        {
+            traditionalRPGModeButton.onClick.AddListener(() => StartGame(CombatMode.TraditionalRPG));
         }
 
         // Configurar textos descriptivos (opcional)

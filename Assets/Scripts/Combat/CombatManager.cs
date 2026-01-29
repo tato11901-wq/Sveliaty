@@ -142,7 +142,7 @@ public class CombatManager : MonoBehaviour
     /// </summary>
     public void SelectAttackType(AffinityType type)
     {
-        if (combatMode != CombatMode.PlayerChooses)
+        if (combatMode != CombatMode.PlayerChooses && combatMode != CombatMode.TraditionalRPG)
         {
             Debug.LogWarning("Solo puedes seleccionar ataque en modo PlayerChooses");
             return;
@@ -198,7 +198,7 @@ public void PlayerAttempt()
     int cardBonus = PlayerCombatData.cards[attackType];
     float multiplier = GetAffinityMultiplier(attackType);
 
-    if (combatMode == CombatMode.PlayerChooses)
+    if (combatMode == CombatMode.PlayerChooses || combatMode == CombatMode.TraditionalRPG)
     {
         AffinityDiscoveryTracker.RegisterDiscovery(currentEnemy.enemyData.id, attackType);
     }
@@ -215,7 +215,9 @@ public void PlayerAttempt()
     OnAttackResult?.Invoke(roll, cardBonus, totalFinal, multiplier);
 
 
-    // Evaluar con el total final
+    // Evaluar con el total final para modo Player Chooses y Modo Pasivo
+    if (combatMode == CombatMode.PlayerChooses || combatMode == CombatMode.Passive)
+    {
     if (totalFinal >= currentEnemy.enemyTierData.healthThreshold)
     {
         playerCombatData.score += CalculateScorePerCombat(multiplier); // Incrementar score de enemigos derrotados
@@ -230,7 +232,30 @@ public void PlayerAttempt()
         {
             EndCombat(false, playerCombatData.score, multiplier);
         }
-    }
+    }}
+    else if (combatMode == CombatMode.TraditionalRPG)
+    {
+        // 1. Restar vida primero
+        currentEnemy.currentRPGHealth -= totalFinal;
+        Debug.Log($"Vida restante del enemigo: {currentEnemy.currentRPGHealth}");
+        
+        // 2. AHORA notificar a la UI (mover aquí específicamente para Traditional RPG)
+        OnAttackResult?.Invoke(roll, cardBonus, totalFinal, multiplier);
+
+        if (currentEnemy.currentRPGHealth <= 0)
+        {
+            playerCombatData.score += CalculateScorePerCombat(multiplier);
+            EndCombat(true, playerCombatData.score, multiplier);
+            return;
+        }
+
+        currentEnemy.attemptsRemaining--;
+        OnAttemptsChanged?.Invoke(currentEnemy.attemptsRemaining);
+
+        if (currentEnemy.attemptsRemaining <= 0)
+        {
+            EndCombat(false, playerCombatData.score, multiplier);
+        }
 }
 
     int RollDice(int diceCount)
@@ -252,24 +277,24 @@ void EndCombat(bool victory, int finalScore, float lastMultiplier)
     {
         if (combatMode == CombatMode.Passive)
         {
+            // Modo Pasivo: siempre da carta aleatoria
             rewardCard = GetRandomAffinityType();
             PlayerCombatData.cards[rewardCard]++;
             OnCombatEnd?.Invoke(victory, finalScore, rewardCard, 0);
         }
-        else if (combatMode == CombatMode.PlayerChooses)
+        else if (combatMode == CombatMode.PlayerChooses || combatMode == CombatMode.TraditionalRPG)
         {
-            // LÓGICA NUEVA:
-            // 1.5f es el valor que definiste para AffinityMultiplier.Weak
+            
+            // Victoria por DEBILIDAD (1.5f o mayor): Elige carta
             if (lastMultiplier >= 1.5f) 
             {
-                // Victoria por DEBILIDAD: Elige carta
                 waitingForCardSelection = true;
                 OnWaitingForCardSelection?.Invoke(finalScore);
                 Debug.Log("¡Debilidad explotada! Elige tu carta.");
             }
             else 
             {
-                // Victoria normal: Probabilidad de carta aleatoria
+                // Victoria normal: Probabilidad de carta aleatoria (50%)
                 if (UnityEngine.Random.Range(0, 100) < randomCardChance)
                 {
                     rewardCard = GetRandomAffinityType();
@@ -280,7 +305,6 @@ void EndCombat(bool victory, int finalScore, float lastMultiplier)
                 else
                 {
                     Debug.Log("Victoria normal. No obtienes carta (no explotaste debilidad).");
-                    // Llamamos a OnCombatEnd con "default" para indicar que no hubo carta
                     OnCombatEnd?.Invoke(true, finalScore, default, 0); 
                 }
             }
@@ -288,11 +312,21 @@ void EndCombat(bool victory, int finalScore, float lastMultiplier)
     }
     else
     {
-        // Aplicar daño al jugador
+        // Derrota: aplicar daño al jugador
         playerCombatData.playerLife -= currentEnemy.enemyTierData.failureDamage;
-        if (playerCombatData.playerLife > 0) OnCombatEnd?.Invoke(false, finalScore, rewardCard, currentEnemy.enemyTierData.failureDamage);
-        else GameOver?.Invoke(finalScore, PlayerCombatData.cards[AffinityType.Fuerza], PlayerCombatData.cards[AffinityType.Agilidad], PlayerCombatData.cards[AffinityType.Destreza], currentEnemy);
+        
+        if (playerCombatData.playerLife > 0)
+        {
+            OnCombatEnd?.Invoke(false, finalScore, rewardCard, currentEnemy.enemyTierData.failureDamage);
+        }
+        else
+        {
+            GameOver?.Invoke(finalScore, PlayerCombatData.cards[AffinityType.Fuerza], 
+                           PlayerCombatData.cards[AffinityType.Agilidad], 
+                           PlayerCombatData.cards[AffinityType.Destreza], currentEnemy);
+        }
     }
+}
 }
 
     ///<summary>
