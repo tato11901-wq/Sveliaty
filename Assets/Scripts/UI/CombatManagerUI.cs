@@ -167,7 +167,7 @@ private void OnDisable()
             vidaText.text = enemy.enemyTierData.healthThreshold.ToString();
         }
 
-        escaladoText.text = GetEscaladoText(enemy);
+
         intentosText.text = enemy.attemptsRemaining.ToString();
         dadosText.text = enemy.enemyTierData.diceCount.ToString();
 
@@ -308,7 +308,7 @@ void HandleAttackResult(int roll, int bonus, int total, float multiplier)
         if (combatManager.GetCombatMode() == CombatMode.Passive)
         {
             int currentCards = combatManager.GetCurrentCards();
-            cartasText.text = $"Tienes: {currentCards} Cartas";
+            cartasText.text = $"Tienes: {currentCards} Cartas de {combatManager.GetCurrentEnemy().enemyData.affinityType}";
         }
         else
         {

@@ -190,10 +190,21 @@ public class CombatManager : MonoBehaviour
     /// </summary>
 public void PlayerAttempt()
 {
+    int totalBase = 0;
+    int totalFinal = 0;
     if (combatEnded) { NextEnemy(); return; }
 
     // Cálculos base
-    int roll = RollDice(currentEnemy.enemyTierData.diceCount);
+    int roll;
+
+    if (combatMode == CombatMode.TraditionalRPG)
+    {
+        roll = RollDice(currentEnemy.currentRPGDiceCount);
+    }
+    else
+    {
+        roll = RollDice(currentEnemy.enemyTierData.diceCount);
+    }
     AffinityType attackType = GetAttackType();
     int cardBonus = PlayerCombatData.cards[attackType];
     float multiplier = GetAffinityMultiplier(attackType);
@@ -204,9 +215,26 @@ public void PlayerAttempt()
     }
     
     
-    // Aplicamos el multiplicador a la SUMA de dados y cartas para que siempre importe
-    int totalBase = roll + cardBonus;
-    int totalFinal = Mathf.RoundToInt(totalBase * multiplier);
+    if(combatMode == CombatMode.TraditionalRPG)
+        {
+            // En Traditional RPG, el multiplicador se aplica a la suma total
+        totalBase = roll + cardBonus;
+        totalFinal = Mathf.RoundToInt(totalBase * multiplier);
+        }
+    
+    if (combatMode == CombatMode.Passive)
+    {
+        totalBase = roll + cardBonus;
+        totalFinal = totalBase; // Sin multiplicador en modo Pasivo
+    }
+
+    if (combatMode == CombatMode.PlayerChooses)
+    {
+        // En Player Chooses, el multiplicador se aplica SOLO al bonus de carta
+        totalBase = roll;
+        totalFinal = Mathf.RoundToInt(totalBase + (cardBonus * multiplier));
+    }
+
 
     // Logs para debug
     Debug.Log($"Base: {totalBase} ({roll}+{cardBonus}) x Mult: {multiplier} = Total: {totalFinal}");
@@ -260,13 +288,17 @@ public void PlayerAttempt()
 
     int RollDice(int diceCount)
     {
+ 
+    
         int total = 0;
         for (int i = 0; i < diceCount; i++)
         {
             total += UnityEngine.Random.Range(1, 13);
         }
         return total;
-    }
+      
+}
+    
 
 void EndCombat(bool victory, int finalScore, float lastMultiplier)
 {

@@ -25,6 +25,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: ef86924c621f25d45b56c8019d6786da, type: 2}
   - {fileID: 11400000, guid: d1f8ba2d5f4127145aa12a508db6116e, type: 2}
   - {fileID: 11400000, guid: d370470bbf6443c4cb06ed25254fdbe9, type: 2}
+  - {fileID: 11400000, guid: 97687c072232b7f4ab4c6fbf40ec6aeb, type: 2}
   tier1Probability: 40
   tier2Probability: 30
   tier3Probability: 30
