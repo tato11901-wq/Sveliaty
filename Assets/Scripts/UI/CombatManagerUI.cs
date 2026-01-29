@@ -10,6 +10,7 @@ public class CombatUIManager : MonoBehaviour
     [Header("Enemy Display")]
     public Image enemySprite;
     public TextMeshProUGUI enemyNameText;
+    public TextMeshProUGUI enemyTierText;
 
     [Header("Stats Display")]
     public TextMeshProUGUI vidaText;
@@ -154,9 +155,18 @@ private void OnDisable()
         // Actualizar sprite y nombre
         enemySprite.sprite = enemy.enemyTierData.sprite;
         enemyNameText.text = enemy.enemyData.displayName;
+        enemyTierText.text = enemy.enemyTierData.GetEnemyTier();
 
         // Actualizar stats
-        vidaText.text = enemy.enemyTierData.healthThreshold.ToString();
+        if (combatManager.GetCombatMode() == CombatMode.TraditionalRPG) 
+        {
+            vidaText.text = enemy.currentRPGHealth.ToString();
+        }
+        else 
+        {
+            vidaText.text = enemy.enemyTierData.healthThreshold.ToString();
+        }
+
         escaladoText.text = GetEscaladoText(enemy);
         intentosText.text = enemy.attemptsRemaining.ToString();
         dadosText.text = enemy.enemyTierData.diceCount.ToString();
@@ -177,17 +187,18 @@ private void OnDisable()
         UpdateAffinitiesUI();
     }
 
-    string GetEscaladoText(EnemyInstance enemy)
+string GetEscaladoText(EnemyInstance enemy)
+{
+    if (combatManager.GetCombatMode() == CombatMode.PlayerChooses || 
+        combatManager.GetCombatMode() == CombatMode.TraditionalRPG)
     {
-        if (combatManager.GetCombatMode() == CombatMode.PlayerChooses)
-        {
-            return "???"; // No revelar debilidad en modo PlayerChooses
-        }
-        else
-        {
-            return enemy.enemyData.affinityType.ToString();
-        }
+        return " "; // No revelar debilidad en modos con elección
     }
+    else
+    {
+        return enemy.enemyData.affinityType.ToString();
+    }
+}
 
 void HandleAttackResult(int roll, int bonus, int total, float multiplier)
 {
@@ -199,7 +210,13 @@ void HandleAttackResult(int roll, int bonus, int total, float multiplier)
     
     resultadoAtaqueText.text = $"{total}{multText}";
     
-    // Opcional: Feedback visual rápido en el texto de cartas o un popup
+    // Actualizar vida del enemigo en Traditional RPG
+    if (combatManager.GetCombatMode() == CombatMode.TraditionalRPG)
+    {
+        EnemyInstance currentEnemy = combatManager.GetCurrentEnemy();
+        vidaText.text = Mathf.Max(0, currentEnemy.currentRPGHealth).ToString();
+    }
+    
     UpdateAffinitiesUI();
 }
 
@@ -212,17 +229,16 @@ void HandleAttackResult(int roll, int bonus, int total, float multiplier)
     {
         passiveEndPanel.SetActive(true);
         
-        // Si rewardCard es el default del Enum (usualmente el primer valor), 
-        // podrías chequear si realmente se entregó una. 
-        // Una forma limpia es ver si el manager notificó una carta válida.
-        
-        if (rewardCard == default && combatManager.GetCombatMode() == CombatMode.PlayerChooses)
+        // Mensaje unificado para PlayerChooses y TraditionalRPG
+        if (rewardCard == default && 
+            (combatManager.GetCombatMode() == CombatMode.PlayerChooses || 
+             combatManager.GetCombatMode() == CombatMode.TraditionalRPG))
         {
-             passiveEndMessageText.text = $"🎉 ¡VICTORIA!\n\nPuntuación: {finalScore}\n\nNo explotaste la debilidad y no hubo suerte con el botín.";
+             passiveEndMessageText.text = $"¡VICTORIA!\n\nPuntuación: {finalScore}\n\nNo explotaste la debilidad y no hubo suerte con el botín.";
         }
         else
         {
-            passiveEndMessageText.text = $"🎉 ¡VICTORIA!\n\nPuntuación: {finalScore}\n\nObtienes 1 carta de:\n{rewardCard}";
+            passiveEndMessageText.text = $"¡VICTORIA!\n\nPuntuación: {finalScore}\n\nObtienes 1 carta de:\n{rewardCard}";
         }
     }
     else
@@ -232,7 +248,6 @@ void HandleAttackResult(int roll, int bonus, int total, float multiplier)
 
         if (lifeLost > 0)
         {
-            
             defeatMessageText.text += $"\n\nPerdiste {lifeLost} vida.";
         }
     }
@@ -244,7 +259,7 @@ void HandleAttackResult(int roll, int bonus, int total, float multiplier)
     {
         // Mostrar panel de selección de carta en modo PLAYERCHOOSES
         playerChoosesVictoryPanel.SetActive(true);
-        playerChoosesVictoryText.text = $"🎉 ¡VICTORIA!\n\nPuntuación: {finalScore}\n\n🎁 Elige tu recompensa:";
+        playerChoosesVictoryText.text = $"¡VICTORIA!\n\nPuntuación: {finalScore}\n\n Elige tu recompensa:";
     }
 
     void SelectCard(AffinityType selectedType)
@@ -257,7 +272,7 @@ void HandleAttackResult(int roll, int bonus, int total, float multiplier)
         
         // Mostrar panel de victoria con la carta seleccionada
         passiveEndPanel.SetActive(true);
-        passiveEndMessageText.text = $"🎉 ¡VICTORIA!\n\n🎁 Obtuviste 1 carta de:\n{selectedType}";
+        passiveEndMessageText.text = $"¡VICTORIA!\n\n Obtuviste 1 carta de:\n{selectedType}";
         
         // Actualizar display de cartas
         UpdateCardsDisplay();
@@ -340,7 +355,8 @@ void HandleAttackResult(int roll, int bonus, int total, float multiplier)
 }
 public void UpdateAffinitiesUI()
 {
-    if (combatManager.GetCombatMode() == CombatMode.PlayerChooses)
+    if (combatManager.GetCombatMode() == CombatMode.PlayerChooses || 
+        combatManager.GetCombatMode() == CombatMode.TraditionalRPG)
     {
         EnemyData enemy = combatManager.GetCurrentEnemy().enemyData;
         UpdateButtonColor(fuerzaButton, AffinityType.Fuerza, enemy);

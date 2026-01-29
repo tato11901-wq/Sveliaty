@@ -85,9 +85,6 @@ public class GameManager : MonoBehaviour
         // Ocultar menú de inicio
         startMenuPanel.SetActive(false);
 
-        //Generar primer enemigo
-
-        
         // Mostrar panel de combate
         combatPanel.SetActive(true);
         gameOverPanel.SetActive(false);

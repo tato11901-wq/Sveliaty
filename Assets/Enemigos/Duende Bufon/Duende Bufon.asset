@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4b49902360aca114ca57cefec09dacb9, type: 3}
-  m_Name: Duende
+  m_Name: Duende Bufon
   m_EditorClassIdentifier: 
   id: 4
   displayName: "Duende Buf\xF3n"
