@@ -31,7 +31,7 @@ public class CombatManager : MonoBehaviour
     /// </summary>
     public void StartNewRun(CombatMode mode)
     {
-        Debug.Log($"Iniciando nueva run en modo: {mode}");
+        Debug.Log($"Iniciando nueva run en modo nuevo: {mode}");
         
         // Establecer el modo de combate para toda la run
         combatMode = mode;
