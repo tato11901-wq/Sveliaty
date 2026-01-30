@@ -12,8 +12,12 @@ public class EnemyTierData : ScriptableObject
     public int diceCount; // Cantidad de dados correspiondientes al enemigo
     public int maximunDiceThrow; // Cantidad de tiradas de dados para el enemigo
     public int failureDamage; // Castigo al usuario al perder el combate
+
+    [Header("RPG Traditional Mode Stats")]
+
     public int RPGLife; // Vida del enemigo en modo RPG Tradicional
     public int RPGDiceCount; // Cantidad de dados en modo RPG Tradicional
+    public int RPGMaximunDiceThrow; // Cantidad de tiradas de dados en modo RPG Tradicional
 
     public String GetEnemyTier()
     {

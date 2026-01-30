@@ -168,8 +168,24 @@ private void OnDisable()
         }
 
 
-        intentosText.text = enemy.attemptsRemaining.ToString();
-        dadosText.text = enemy.enemyTierData.diceCount.ToString();
+        if(combatManager.GetCombatMode() == CombatMode.TraditionalRPG)
+        {
+            intentosText.text = enemy.RPGattemptsRemaining.ToString();
+        }
+        else
+        {
+           intentosText.text = enemy.attemptsRemaining.ToString();
+        }
+
+
+        if(combatManager.GetCombatMode() == CombatMode.TraditionalRPG)
+        {
+        dadosText.text = enemy.currentRPGDiceCount.ToString();
+        }
+        else
+        {
+            dadosText.text = enemy.enemyTierData.diceCount.ToString();
+        }
 
         UpdateModeUI();
 

@@ -20,3 +20,4 @@ MonoBehaviour:
   failureDamage: 5
   RPGLife: 30
   RPGDiceCount: 3
+  RPGMaximunDiceThrow: 3

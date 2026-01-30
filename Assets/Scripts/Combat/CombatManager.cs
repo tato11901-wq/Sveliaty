@@ -277,10 +277,10 @@ public void PlayerAttempt()
             return;
         }
 
-        currentEnemy.attemptsRemaining--;
-        OnAttemptsChanged?.Invoke(currentEnemy.attemptsRemaining);
+        currentEnemy.RPGattemptsRemaining--;
+        OnAttemptsChanged?.Invoke(currentEnemy.RPGattemptsRemaining);
 
-        if (currentEnemy.attemptsRemaining <= 0)
+        if (currentEnemy.RPGattemptsRemaining <= 0)
         {
             EndCombat(false, playerCombatData.score, multiplier);
         }
