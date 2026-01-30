@@ -328,9 +328,9 @@ void HandleAttackResult(int roll, int bonus, int total, float multiplier)
         }
         else
         {
-            fuerzaCartasText.text = $"ATACAR CON FUERZA Tienes: {combatManager.GetCardsOfType(AffinityType.Fuerza)} Cartas";
-            agilidadCartasText.text = $"ATACAR CON AGILIDAD Tienes: {combatManager.GetCardsOfType(AffinityType.Agilidad)} Cartas";
-            destrezaCartasText.text = $"ATACAR CON DESTREZA Tienes: {combatManager.GetCardsOfType(AffinityType.Destreza)} Cartas";
+            fuerzaCartasText.text = $"ATACAR CON gatito Tienes: {combatManager.GetCardsOfType(AffinityType.Fuerza)} Cartas";
+            agilidadCartasText.text = $"ATACAR CON bicho Tienes: {combatManager.GetCardsOfType(AffinityType.Agilidad)} Cartas";
+            destrezaCartasText.text = $"ATACAR CON conejo Tienes: {combatManager.GetCardsOfType(AffinityType.Destreza)} Cartas";
         }
     }
 
