@@ -288,7 +288,7 @@ void HandleAttackResult(int roll, int bonus, int total, float multiplier)
         
         // Mostrar panel de victoria con la carta seleccionada
         passiveEndPanel.SetActive(true);
-        passiveEndMessageText.text = $"¡VICTORIA!\n\n Obtuviste 1 carta de:\n{selectedType}";
+        passiveEndMessageText.text = $"¡WOW! ¡VICTORIA!\n\n Obtuviste 1 carta de:\n{selectedType}";
         
         // Actualizar display de cartas
         UpdateCardsDisplay();
@@ -324,13 +324,13 @@ void HandleAttackResult(int roll, int bonus, int total, float multiplier)
         if (combatManager.GetCombatMode() == CombatMode.Passive)
         {
             int currentCards = combatManager.GetCurrentCards();
-            cartasText.text = $"Tienes: {currentCards} Cartas de {combatManager.GetCurrentEnemy().enemyData.affinityType}";
+            cartasText.text = $"Tienes: {currentCards} muchas Cartas de {combatManager.GetCurrentEnemy().enemyData.affinityType}";
         }
         else
         {
-            fuerzaCartasText.text = $"ATACAR CON FUERZA Tienes: {combatManager.GetCardsOfType(AffinityType.Fuerza)} Cartas";
-            agilidadCartasText.text = $"ATACAR CON AGILIDAD Tienes: {combatManager.GetCardsOfType(AffinityType.Agilidad)} Cartas";
-            destrezaCartasText.text = $"ATACAR CON DESTREZA Tienes: {combatManager.GetCardsOfType(AffinityType.Destreza)} Cartas";
+            fuerzaCartasText.text = $"ATACAR CON gatito Tienes: {combatManager.GetCardsOfType(AffinityType.Fuerza)} Cartas";
+            agilidadCartasText.text = $"ATACAR CON bicho Tienes: {combatManager.GetCardsOfType(AffinityType.Agilidad)} Cartas";
+            destrezaCartasText.text = $"ATACAR CON conejo Tienes: {combatManager.GetCardsOfType(AffinityType.Destreza)} Cartas";
         }
     }
 
