@@ -304,7 +304,7 @@ void EndCombat(bool victory, int finalScore, float lastMultiplier)
                 }
                 else
                 {
-                    Debug.Log("Victoria normal. No obtienes carta (no explotaste debilidad).");
+                    Debug.Log("Victoria normal. No obtienes carta.");
                     OnCombatEnd?.Invoke(true, finalScore, default, 0); 
                 }
             }
