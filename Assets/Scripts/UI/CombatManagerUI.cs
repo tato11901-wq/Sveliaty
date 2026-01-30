@@ -288,7 +288,7 @@ void HandleAttackResult(int roll, int bonus, int total, float multiplier)
         
         // Mostrar panel de victoria con la carta seleccionada
         passiveEndPanel.SetActive(true);
-        passiveEndMessageText.text = $"¡VICTORIA!\n\n Obtuviste 1 carta de:\n{selectedType}";
+        passiveEndMessageText.text = $"¡WOW! ¡VICTORIA!\n\n Obtuviste 1 carta de:\n{selectedType}";
         
         // Actualizar display de cartas
         UpdateCardsDisplay();
@@ -324,7 +324,7 @@ void HandleAttackResult(int roll, int bonus, int total, float multiplier)
         if (combatManager.GetCombatMode() == CombatMode.Passive)
         {
             int currentCards = combatManager.GetCurrentCards();
-            cartasText.text = $"Tienes: {currentCards} Cartas de {combatManager.GetCurrentEnemy().enemyData.affinityType}";
+            cartasText.text = $"Tienes: {currentCards} muchas Cartas de {combatManager.GetCurrentEnemy().enemyData.affinityType}";
         }
         else
         {
