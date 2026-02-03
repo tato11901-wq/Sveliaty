@@ -17,7 +17,6 @@ MonoBehaviour:
   healthThreshold: 32
   diceCount: 3
   maximunDiceThrow: 2
-  failureDamage: 20
+  failureDamage: 101
   RPGLife: 30
   RPGDiceCount: 3
-  RPGMaximunDiceThrow: 0

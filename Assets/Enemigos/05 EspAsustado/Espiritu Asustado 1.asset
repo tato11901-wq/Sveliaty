@@ -18,6 +18,5 @@ MonoBehaviour:
   diceCount: 3
   maximunDiceThrow: 2
   failureDamage: 0
-  RPGLife: 40
-  RPGDiceCount: 2
-  RPGMaximunDiceThrow: 3
+  RPGLife: 30
+  RPGDiceCount: 3

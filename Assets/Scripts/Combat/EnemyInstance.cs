@@ -7,8 +7,6 @@ public class EnemyInstance
     public int attemptsRemaining; // Intentos restantes para derrotar al enemigo
     public int currentRPGHealth; // Vida actual en modo RPG Tradicional
     public int currentRPGDiceCount; // Cantidad de dados actuales en modo RPG Tradicional
-    public int RPGattemptsRemaining; // Intentos restantes en modo RPG Tradicional
-    
 
     public EnemyInstance(EnemyData data, EnemyTierData tierData)
     {
@@ -17,6 +15,5 @@ public class EnemyInstance
         attemptsRemaining = tierData.maximunDiceThrow;
         currentRPGHealth = tierData.RPGLife;
         currentRPGDiceCount = tierData.RPGDiceCount;
-        RPGattemptsRemaining = tierData.RPGMaximunDiceThrow;
     }
 }
