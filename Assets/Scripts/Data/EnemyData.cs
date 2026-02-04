@@ -15,6 +15,10 @@ public class EnemyData : ScriptableObject
     public AffinityRelation[] affinityRelations;
     
     public EnemyTierData[] enemyTierData;
+    
+    [Header("Sistema de Maldiciones")]
+    [Tooltip("Si es true, este enemigo tiene alta probabilidad de maldecir")]
+    public bool isSpirit = false;
 }
 
 [System.Serializable]

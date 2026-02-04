@@ -22,3 +22,4 @@ MonoBehaviour:
   - {fileID: 11400000, guid: b6392863a6e950945ab338bb5b1d5369, type: 2}
   - {fileID: 11400000, guid: 9693748cdd986f04aaae499759f4d6ba, type: 2}
   - {fileID: 11400000, guid: 0c717fb11dcfcf74586077ab2763f4a8, type: 2}
+  isSpirit: 1

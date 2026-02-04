@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e33a6405f87f93346a1dedaa83ee2ed7, type: 3}
+  m_Name: "Pu\xF1o Fuerte"
+  m_EditorClassIdentifier: 
+  id: 0
+  abilityName: "Pu\xF1o Fuerte"
+  description: "Ataque b\xE1sico de la rama de fuerza"
+  affinityType: 0
+  icon: {fileID: 0}
+  cardCost: 0
+  healthCost: 0
+  turnCost: 0
+  diceModifier: 0
+  diceMaxValue: 0
+  diceMultiplier: 0
+  diceAddition: 0
+  affinityMultiplierBonus: 0
+  cardMultiplier: 0
+  hasSuccessChance: 0
+  successChance: 0
+  hasOnKillEffect: 0
+  onKillHealthReward: 0
+  hasOnFailEffect: 0
+  onFailHealthPenalty: 0
+  onFailTurnPenalty: 0
+  canAvoidTurnConsumption: 0
+  avoidTurnChance: 0
+  avoidTurnFailPenalty: 0
+  unlockRequirement: 5
+  isBasicAbility: 1

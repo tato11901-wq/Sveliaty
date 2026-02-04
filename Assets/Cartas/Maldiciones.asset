@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 760845dcb11fb2c45a9673396522055c, type: 3}
+  m_Name: Maldiciones
+  m_EditorClassIdentifier: 
+  allCurses:
+  - {fileID: 11400000, guid: 3d87fa48d8de35f4983e39bcd0b7988c, type: 2}
+  - {fileID: 11400000, guid: 75b8f680b7402b2458ff10a436918b92, type: 2}
+  - {fileID: 11400000, guid: 549583f57d519d04db650bdefb316994, type: 2}
+  - {fileID: 11400000, guid: 63ecfa9fa5dd5514b9c6ea83fd61d6f3, type: 2}
+  - {fileID: 11400000, guid: c6448325d9adb584b8c8cf54e12c69ef, type: 2}

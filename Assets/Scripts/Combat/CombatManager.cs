@@ -7,6 +7,10 @@ public class CombatManager : MonoBehaviour
     [Header("Boss Rush Setup")]
     public EnemyDatabase enemyDatabase;
 
+    [Header("New Systems")]
+    public AbilityManager abilityManager;
+    public CurseManager curseManager;
+
     [Header("Combat Settings")]
     private CombatMode combatMode = CombatMode.Passive;
     [Range(0, 100)] public float randomCardChance = 30f;
@@ -16,6 +20,10 @@ public class CombatManager : MonoBehaviour
     private PlayerCombatData playerCombatData;
     private bool combatEnded = false;
     private bool waitingForCardSelection = false;
+
+    // NUEVO: Contador de turnos
+    private int turnsUsedThisCombat = 0;
+    private int currentTurnNumber = 0;
 
     // Eventos para la UI
     public event Action<EnemyInstance> OnCombatStart;
@@ -117,6 +125,16 @@ public class CombatManager : MonoBehaviour
         currentEnemy = new EnemyInstance(enemyData, tierData);
         combatEnded = false;
 
+        //Resetear contador de turnos
+        turnsUsedThisCombat = 0;
+        currentTurnNumber = 0;
+
+        // Aplicar efectos pre-combate de maldiciones
+        if (curseManager != null)
+        {
+            curseManager.OnPreCombat(currentEnemy);
+        }
+
         Debug.Log($"\nBOSS RUSH: {currentEnemy.enemyData.displayName} ({tierData.enemyTier})");
 
         // Notificar a la UI
@@ -186,119 +204,256 @@ public class CombatManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Intento de ataque del jugador
+    /// NUEVO: Intento de ataque del jugador usando una habilidad específica
     /// </summary>
-public void PlayerAttempt()
-{
-    int totalBase = 0;
-    int totalFinal = 0;
-    if (combatEnded) { NextEnemy(); return; }
-
-    // Cálculos base
-    int roll;
-
-    if (combatMode == CombatMode.TraditionalRPG)
+    public void PlayerAttempt(AbilityData ability)
     {
-        roll = RollDice(currentEnemy.currentRPGDiceCount);
-    }
-    else
-    {
-        roll = RollDice(currentEnemy.enemyTierData.diceCount);
-    }
-    AffinityType attackType = GetAttackType();
-    int cardBonus = PlayerCombatData.cards[attackType];
-    float multiplier = GetAffinityMultiplier(attackType);
-
-    if (combatMode == CombatMode.PlayerChooses || combatMode == CombatMode.TraditionalRPG)
-    {
-        AffinityDiscoveryTracker.RegisterDiscovery(currentEnemy.enemyData.id, attackType);
-    }
-    
-    
-    if(combatMode == CombatMode.TraditionalRPG)
-        {
-            // En Traditional RPG, el multiplicador se aplica a la suma total
-        totalBase = roll + cardBonus;
-        totalFinal = Mathf.RoundToInt(totalBase * multiplier);
-        }
-    
-    if (combatMode == CombatMode.Passive)
-    {
-        totalBase = roll + cardBonus;
-        totalFinal = totalBase; // Sin multiplicador en modo Pasivo
-    }
-
-    if (combatMode == CombatMode.PlayerChooses)
-    {
-        // En Player Chooses, el multiplicador se aplica SOLO al bonus de carta
-        totalBase = roll;
-        totalFinal = Mathf.RoundToInt(totalBase + (cardBonus * multiplier));
-    }
-
-
-    // Logs para debug
-    Debug.Log($"Base: {totalBase} ({roll}+{cardBonus}) x Mult: {multiplier} = Total: {totalFinal}");
-
-    // 2. Notificar UI incluyendo el multiplicador
-    OnAttackResult?.Invoke(roll, cardBonus, totalFinal, multiplier);
-
-
-    // Evaluar con el total final para modo Player Chooses y Modo Pasivo
-    if (combatMode == CombatMode.PlayerChooses || combatMode == CombatMode.Passive)
-    {
-    if (totalFinal >= currentEnemy.enemyTierData.healthThreshold)
-    {
-        playerCombatData.score += CalculateScorePerCombat(multiplier); // Incrementar score de enemigos derrotados
-        EndCombat(true, playerCombatData.score, multiplier);
-    }
-    else
-    {
-        currentEnemy.attemptsRemaining--;
-        OnAttemptsChanged?.Invoke(currentEnemy.attemptsRemaining);
-
-        if (currentEnemy.attemptsRemaining <= 0)
-        {
-            EndCombat(false, playerCombatData.score, multiplier);
-        }
-    }}
-    else if (combatMode == CombatMode.TraditionalRPG)
-    {
-        // 1. Restar vida primero
-        currentEnemy.currentRPGHealth -= totalFinal;
-        Debug.Log($"Vida restante del enemigo: {currentEnemy.currentRPGHealth}");
+        if (combatEnded) { NextEnemy(); return; }
         
-        // 2. AHORA notificar a la UI (mover aquí específicamente para Traditional RPG)
-        OnAttackResult?.Invoke(roll, cardBonus, totalFinal, multiplier);
-
-        if (currentEnemy.currentRPGHealth <= 0)
+        currentTurnNumber++;
+        
+        // 1. FASE PRE-ATAQUE: Aplicar efectos de maldiciones
+        if (curseManager != null)
         {
-            playerCombatData.score += CalculateScorePerCombat(multiplier);
-            EndCombat(true, playerCombatData.score, multiplier);
+            curseManager.OnTurnStart();
+        }
+        
+        // 2. Verificar si puede usar la habilidad
+        if (abilityManager != null && !abilityManager.CanUseAbility(ability, playerCombatData.playerLife, currentEnemy.attemptsRemaining))
+        {
+            Debug.LogWarning("No puedes usar esta habilidad");
             return;
         }
-
-        currentEnemy.attemptsRemaining--;
-        OnAttemptsChanged?.Invoke(currentEnemy.attemptsRemaining);
-
-        if (currentEnemy.attemptsRemaining <= 0)
+        
+        // 3. Aplicar costos
+        playerCombatData.playerLife -= ability.healthCost;
+        if (abilityManager != null && ability.cardCost > 0)
         {
-            EndCombat(false, playerCombatData.score, multiplier);
+            abilityManager.SpendCards(ability.affinityType, ability.cardCost);
         }
-}
+        
+        // 4. Verificar probabilidad de éxito (si aplica)
+        bool success = true;
+        if (ability.hasSuccessChance)
+        {
+            success = UnityEngine.Random.Range(0f, 100f) < ability.successChance;
+            
+            if (!success)
+            {
+                // Aplicar penalización por fallo
+                playerCombatData.playerLife -= ability.onFailHealthPenalty;
+                currentEnemy.attemptsRemaining -= (1 + ability.onFailTurnPenalty);
+                OnAttemptsChanged?.Invoke(currentEnemy.attemptsRemaining);
+                
+                Debug.Log($" {ability.abilityName} FALLÓ");
+                
+                // Verificar si se acabaron los turnos
+                if (currentEnemy.attemptsRemaining <= 0)
+                {
+                    EndCombat(false, playerCombatData.score, 1f);
+                }
+                return;
+            }
+        }
+        
+        // 5. Calcular dados
+        int diceCount = CalculateDiceCount(ability);
+        int diceMax = ability.diceMaxValue > 0 ? ability.diceMaxValue : 12;
+        int roll = RollDice(diceCount, diceMax);
+        
+        // 6. Calcular bonus de cartas
+        AffinityType attackType = ability.affinityType;
+        int cardBonus = PlayerCombatData.cards[attackType];
+        
+        // Aplicar multiplicador de cartas (ej: Corte Profundo)
+        if (ability.cardMultiplier != 0)
+        {
+            cardBonus = Mathf.RoundToInt(cardBonus * ability.cardMultiplier);
+        }
+        
+        // Negar cartas si hay maldición activa
+        if (curseManager != null && curseManager.HasNegatedCards())
+        {
+            cardBonus = -cardBonus;
+            Debug.Log("Tus cartas están negadas");
+        }
+        
+        // 7. Calcular multiplicador de afinidad
+        float multiplier = GetAffinityMultiplier(attackType);
+        multiplier += ability.affinityMultiplierBonus;
+        
+        // 8. Registrar descubrimiento
+        if (combatMode == CombatMode.PlayerChooses || combatMode == CombatMode.TraditionalRPG)
+        {
+            AffinityDiscoveryTracker.RegisterDiscovery(currentEnemy.enemyData.id, attackType);
+        }
+        
+        // 9. Calcular total según modo
+        int totalBase = 0;
+        int totalFinal = 0;
+        
+        if (combatMode == CombatMode.TraditionalRPG)
+        {
+            totalBase = roll + cardBonus;
+            totalFinal = Mathf.RoundToInt(totalBase * multiplier);
+        }
+        else if (combatMode == CombatMode.Passive)
+        {
+            totalBase = roll + cardBonus;
+            totalFinal = totalBase;
+        }
+        else if (combatMode == CombatMode.PlayerChooses)
+        {
+            totalBase = roll;
+            totalFinal = Mathf.RoundToInt(totalBase + (cardBonus * multiplier));
+        }
 
-    int RollDice(int diceCount)
+        // 11. Evaluar victoria/derrota  (Invertidos para que se vea la resta)
+        bool victory = EvaluateAttack(totalFinal, multiplier);
+        
+        // 10. Notificar UI
+        OnAttackResult?.Invoke(roll, cardBonus, totalFinal, multiplier);
+        
+
+        
+        // 12. Aplicar efectos condicionales
+        if (victory && ability.hasOnKillEffect)
+        {
+            playerCombatData.playerLife += ability.onKillHealthReward;
+            Debug.Log($"Recuperaste {ability.onKillHealthReward} HP");
+        }
+        
+        // 13. Consumir turnos (verificar efectos especiales)
+        bool consumedTurn = ConsumeTurn(ability);
+        
+        if (consumedTurn)
+        {
+            turnsUsedThisCombat++;
+        }
+    }
+
+    /// <summary>
+    /// VERSIÓN LEGACY: Intento de ataque sin habilidad específica (para compatibilidad)
+    /// </summary>
+    public void PlayerAttempt()
     {
- 
-    
+        // Crear habilidad básica temporal según el modo
+        AbilityData basicAbility = ScriptableObject.CreateInstance<AbilityData>();
+        basicAbility.abilityName = "Ataque Básico";
+        basicAbility.affinityType = GetAttackType();
+        basicAbility.cardCost = 0;
+        basicAbility.healthCost = 0;
+        basicAbility.turnCost = 1;
+        basicAbility.diceModifier = 0;
+        basicAbility.diceMaxValue = 0;
+        basicAbility.diceMultiplier = 0;
+        basicAbility.diceAddition = 0;
+        basicAbility.affinityMultiplierBonus = 0;
+        basicAbility.cardMultiplier = 0;
+        basicAbility.hasSuccessChance = false;
+        basicAbility.hasOnKillEffect = false;
+        basicAbility.hasOnFailEffect = false;
+        basicAbility.canAvoidTurnConsumption = false;
+
+        PlayerAttempt(basicAbility);
+    }
+
+    int CalculateDiceCount(AbilityData ability)
+    {
+        int baseCount = combatMode == CombatMode.TraditionalRPG 
+            ? currentEnemy.currentRPGDiceCount 
+            : currentEnemy.enemyTierData.diceCount;
+        
+        // Aplicar modificador fijo
+        baseCount += ability.diceModifier;
+        
+        // Aplicar multiplicador y suma (ej: Golpes Rápidos)
+        if (ability.diceMultiplier != 0)
+        {
+            baseCount = Mathf.RoundToInt(baseCount * ability.diceMultiplier);
+        }
+        baseCount += ability.diceAddition;
+        
+        return Mathf.Max(1, baseCount); // Mínimo 1 dado
+    }
+
+    int RollDice(int diceCount, int maxValue)
+    {
         int total = 0;
         for (int i = 0; i < diceCount; i++)
         {
-            total += UnityEngine.Random.Range(1, 13);
+            total += UnityEngine.Random.Range(1, maxValue + 1);
         }
         return total;
-      
-}
-    
+    }
+
+    bool EvaluateAttack(int totalFinal, float multiplier)
+    {
+        bool victory = false;
+        
+        if (combatMode == CombatMode.TraditionalRPG)
+        {
+            currentEnemy.currentRPGHealth -= totalFinal;
+            
+            if (currentEnemy.currentRPGHealth <= 0)
+            {
+                victory = true;
+                playerCombatData.score += CalculateScorePerCombat(multiplier);
+                EndCombat(true, playerCombatData.score, multiplier);
+                return true;
+            }
+        }
+        else
+        {
+            // Verificar condición de victoria (puede estar invertida por maldición)
+            bool invertedCondition = curseManager != null && curseManager.HasInvertedVictoryCondition();
+            
+            bool normalSuccess = totalFinal >= currentEnemy.enemyTierData.healthThreshold;
+            victory = invertedCondition ? (totalFinal <= currentEnemy.enemyTierData.healthThreshold) : normalSuccess;
+            
+            if (victory)
+            {
+                playerCombatData.score += CalculateScorePerCombat(multiplier);
+                EndCombat(true, playerCombatData.score, multiplier);
+                return true;
+            }
+        }
+        
+        // No hubo victoria, reducir intentos
+        currentEnemy.attemptsRemaining--;
+        OnAttemptsChanged?.Invoke(currentEnemy.attemptsRemaining);
+        
+        if (currentEnemy.attemptsRemaining <= 0)
+        {
+            EndCombat(false, playerCombatData.score, multiplier);
+        }
+        
+        return victory;
+    }
+
+    bool ConsumeTurn(AbilityData ability)
+    {
+        // Verificar si tiene probabilidad de no consumir turno (Golpe Fantasma)
+        if (ability.canAvoidTurnConsumption)
+        {
+            if (UnityEngine.Random.Range(0f, 100f) < ability.avoidTurnChance)
+            {
+                Debug.Log("👻 No se consumió el turno");
+                return false;
+            }
+            else
+            {
+                playerCombatData.playerLife -= ability.avoidTurnFailPenalty;
+                Debug.Log($"❌ Detectado: -{ability.avoidTurnFailPenalty} HP");
+            }
+        }
+        
+        // Consumir los turnos especificados
+        currentEnemy.attemptsRemaining -= ability.turnCost;
+        OnAttemptsChanged?.Invoke(currentEnemy.attemptsRemaining);
+        
+        return true;
+    }
 
 void EndCombat(bool victory, int finalScore, float lastMultiplier)
 {
@@ -307,6 +462,24 @@ void EndCombat(bool victory, int finalScore, float lastMultiplier)
 
     if (victory)
     {
+        // NUEVO: Aplicar efectos post-combate de maldiciones
+        if (curseManager != null)
+        {
+            curseManager.OnPostCombat(true);
+        }
+
+        // NUEVO: Recuperar cartas si aplica
+        if (abilityManager != null)
+        {
+            abilityManager.OnCombatWon();
+        }
+
+        // NUEVO: Verificar desbloqueos
+        if (abilityManager != null)
+        {
+            abilityManager.CheckUnlocks();
+        }
+
         if (combatMode == CombatMode.Passive)
         {
             // Modo Pasivo: siempre da carta aleatoria
@@ -326,7 +499,7 @@ void EndCombat(bool victory, int finalScore, float lastMultiplier)
             }
             else 
             {
-                // Victoria normal: Probabilidad de carta aleatoria (50%)
+                // Victoria normal: Probabilidad de carta aleatoria
                 if (UnityEngine.Random.Range(0, 100) < randomCardChance)
                 {
                     rewardCard = GetRandomAffinityType();
@@ -341,25 +514,67 @@ void EndCombat(bool victory, int finalScore, float lastMultiplier)
                 }
             }
         }
+
+        // NUEVO: Verificar evento de maldición
+        Debug.Log("🎴 Verificando evento de maldición...");
+        CheckCurseEvent();
     }
     else
     {
-        // Derrota: aplicar daño al jugador
-        playerCombatData.playerLife -= currentEnemy.enemyTierData.failureDamage;
+        // Verificar si tiene negación de daño
+        bool hasShield = curseManager != null && curseManager.HasDamageNegation();
         
-        if (playerCombatData.playerLife > 0)
+        if (hasShield)
         {
-            OnCombatEnd?.Invoke(false, finalScore, rewardCard, currentEnemy.enemyTierData.failureDamage);
+            Debug.Log("Daño negado por maldición");
+            OnCombatEnd?.Invoke(false, finalScore, default, 0);
         }
         else
         {
-            GameOver?.Invoke(finalScore, PlayerCombatData.cards[AffinityType.Fuerza], 
-                           PlayerCombatData.cards[AffinityType.Agilidad], 
-                           PlayerCombatData.cards[AffinityType.Destreza], currentEnemy);
+            // Derrota: aplicar daño al jugador
+            playerCombatData.playerLife -= currentEnemy.enemyTierData.failureDamage;
+            
+            if (playerCombatData.playerLife > 0)
+            {
+                OnCombatEnd?.Invoke(false, finalScore, rewardCard, currentEnemy.enemyTierData.failureDamage);
+            }
+            else
+            {
+                GameOver?.Invoke(finalScore, PlayerCombatData.cards[AffinityType.Fuerza], 
+                               PlayerCombatData.cards[AffinityType.Agilidad], 
+                               PlayerCombatData.cards[AffinityType.Destreza], currentEnemy);
+            }
+        }
+        
+        if (curseManager != null)
+        {
+            curseManager.OnDefeat();
         }
     }
 }
-}
+
+    void CheckCurseEvent()
+    {
+        if (curseManager == null)
+        {
+            Debug.LogWarning("⚠️ CurseManager es NULL");
+            return;
+        }
+
+        bool isSpirit = currentEnemy.enemyData.isSpirit;
+        
+        Debug.Log($"🎲 Turnos usados: {turnsUsedThisCombat}, Es espíritu: {isSpirit}");
+        
+        if (curseManager.ShouldTriggerCurseEvent(turnsUsedThisCombat, isSpirit))
+        {
+            Debug.Log("✅ ¡Evento de maldición activado!");
+            curseManager.TriggerCurseChoiceEvent();
+        }
+        else
+        {
+            Debug.Log("❌ No se activó evento de maldición");
+        }
+    }
 
     ///<summary>
     /// Game Over si la vida llega a 0
@@ -478,4 +693,5 @@ void EndCombat(bool victory, int finalScore, float lastMultiplier)
     public CombatMode GetCombatMode() => combatMode;
     public int GetPlayerLife() => playerCombatData?.playerLife ?? 0;
     public int GetPlayerMaxLife() => playerCombatData?.playerMaxLife ?? 100;
+    public int GetCurrentTurnNumber() => currentTurnNumber; // NUEVO
 }
