@@ -1,93 +1,257 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
+using System.Collections;
+using System.Collections.Generic;
 
 public class CurseChoiceUI : MonoBehaviour
 {
     [Header("References")]
+    public CombatManager combatManager;
     public CurseManager curseManager;
+
+    [Header("Paneles a desactivar temporalmente") ]
+    public GameObject[] panelsToDisable;
     
-    [Header("UI Elements")]
-    public GameObject panel;
-    public Button[] cardButtons; // 3 botones
-    public Image[] cardFronts; // Las 3 cartas volteadas
+    [Header("UI Elements - Fase 1: 3 Cartas")]
+    public GameObject threeCardsPanel;
+    public Button[] cardButtons; // 3 botones (todos muestran reverso)
+    
+    [Header("UI Elements - Fase 2: Descripcion")]
+    public GameObject descriptionPanel;
+    public Image curseIcon; // Icono de la maldicion seleccionada
+    public TextMeshProUGUI curseNameText;
+    public TextMeshProUGUI curseDescriptionText;
+    public Button continueButton;
     
     private List<CurseData> currentOptions;
-    private bool[] revealed = new bool[3];
+    private CurseData selectedCurse;
     
-void OnEnable()
-{
-    if (curseManager == null)
+    void Start()
     {
-        Debug.LogError("❌ CurseChoiceUI: CurseManager no asignado");
-        return;
+        if (curseManager == null)
+        {
+            Debug.LogError("CurseChoiceUI: CurseManager no asignado en Inspector");
+            return;
+        }
+        
+        curseManager.OnCurseChoiceEvent += ShowChoiceEvent;
+        Debug.Log("CurseChoiceUI: Suscrito al evento OnCurseChoiceEvent");
+        
+        // Configurar boton de continuar
+        if (continueButton != null)
+        {
+            continueButton.onClick.AddListener(OnContinueButtonPressed);
+        }
+        
+        // Ocultar ambos paneles al inicio
+        if (threeCardsPanel != null)
+        {
+            threeCardsPanel.SetActive(false);
+        }
+        if (descriptionPanel != null)
+        {
+            descriptionPanel.SetActive(false);
+        }
     }
     
-    curseManager.OnCurseChoiceEvent += ShowChoiceEvent;
-    Debug.Log("✅ CurseChoiceUI suscrito correctamente");
-}
-    
-    void OnDisable()
+    void OnDestroy()
     {
-        curseManager.OnCurseChoiceEvent -= ShowChoiceEvent;
+        if (curseManager != null)
+        {
+            curseManager.OnCurseChoiceEvent -= ShowChoiceEvent;
+        }
     }
     
+    /// <summary>
+    /// FASE 1: Mostrar las 3 cartas volteadas (todas iguales)
+    /// </summary>
     void ShowChoiceEvent(List<CurseData> options)
     {
 
-            Debug.Log($"🎴 ShowChoiceEvent llamado con {options.Count} opciones");
-    
-    if (panel == null)
-    {
-        Debug.LogError("❌ Panel es NULL en CurseChoiceUI");
-        return;
-    }
-    
-    currentOptions = options;
-    panel.SetActive(true);
-    Debug.Log($"✅ Panel activado: {panel.activeSelf}");
-
-    
-        currentOptions = options;
-        panel.SetActive(true);
+        // Desactivar otros paneles de UI
+        if (panelsToDisable != null)
+        {
+            foreach (GameObject panel in panelsToDisable)
+            {
+                if (panel != null)
+                {
+                    panel.SetActive(false);
+                }
+            }
+        }
         
-        // Resetear estado
+        Debug.Log("CurseChoiceUI: ShowChoiceEvent llamado con " + options.Count + " opciones");
+        
+        if (threeCardsPanel == null)
+        {
+            Debug.LogError("CurseChoiceUI: threeCardsPanel no asignado");
+            return;
+        }
+        
+        currentOptions = options;
+        selectedCurse = null;
+
+
+        // Mostrar panel de 3 cartas
+        threeCardsPanel.SetActive(true);
+        
+        // Ocultar panel de descripcion
+        if (descriptionPanel != null)
+        {
+            descriptionPanel.SetActive(false);
+        }
+        
+        Debug.Log("Panel de 3 cartas activado");
+        
+        // Configurar los 3 botones
         for (int i = 0; i < 3; i++)
         {
-            revealed[i] = false;
-            cardFronts[i].gameObject.SetActive(false); // Mostrar reverso
-            cardButtons[i].interactable = true;
-            
-            int index = i; // Closure
-            cardButtons[i].onClick.RemoveAllListeners();
-            cardButtons[i].onClick.AddListener(() => OnCardSelected(index));
+            if (cardButtons != null && cardButtons.Length > i && cardButtons[i] != null)
+            {
+                cardButtons[i].interactable = true;
+                
+                int index = i; // Closure
+                cardButtons[i].onClick.RemoveAllListeners();
+                cardButtons[i].onClick.AddListener(() => OnCardSelected(index));
+            }
         }
     }
     
+    /// <summary>
+    /// Cuando el jugador selecciona una de las 3 cartas
+    /// </summary>
     void OnCardSelected(int index)
     {
-        // Revelar la carta seleccionada
-        revealed[index] = true;
-        cardFronts[index].sprite = currentOptions[index].icon;
-        cardFronts[index].gameObject.SetActive(true);
-        
-        // Deshabilitar otros botones
-        for (int i = 0; i < 3; i++)
+        if (currentOptions == null || index >= currentOptions.Count)
         {
-            cardButtons[i].interactable = false;
+            Debug.LogError("Indice invalido: " + index);
+            return;
         }
         
-        // Dar la maldición al jugador
-        curseManager.ObtainCurse(currentOptions[index]);
+        selectedCurse = currentOptions[index];
+        Debug.Log("Carta " + index + " seleccionada: " + selectedCurse.curseName);
         
-        // Cerrar panel después de 2 segundos
-        StartCoroutine(CloseAfterDelay(2f));
+        // Deshabilitar todos los botones
+        if (cardButtons != null)
+        {
+            for (int i = 0; i < cardButtons.Length; i++)
+            {
+                if (cardButtons[i] != null)
+                {
+                    cardButtons[i].interactable = false;
+                }
+            }
+        }
+        
+        // Dar la maldicion al jugador (aplicar efectos instantaneos si aplica)
+        curseManager.ObtainCurse(selectedCurse);
+        
+        // Esperar un momento antes de cambiar a la fase de descripcion
+        StartCoroutine(TransitionToDescriptionPhase());
     }
     
-    IEnumerator CloseAfterDelay(float delay)
+    /// <summary>
+    /// Transicion suave entre fase de seleccion y fase de descripcion
+    /// </summary>
+    IEnumerator TransitionToDescriptionPhase()
     {
-        yield return new WaitForSeconds(delay);
-        panel.SetActive(false);
+        // Esperar 1 segundo para que el jugador procese su seleccion
+        yield return new WaitForSeconds(1f);
+        
+        // Ocultar las 3 cartas
+        if (threeCardsPanel != null)
+        {
+            threeCardsPanel.SetActive(false);
+        }
+        
+        // FASE 2: Mostrar panel de descripcion
+        ShowDescriptionPhase();
+    }
+    
+    /// <summary>
+    /// FASE 2: Mostrar la descripcion de la maldicion seleccionada
+    /// </summary>
+    void ShowDescriptionPhase()
+    {
+        if (descriptionPanel == null)
+        {
+            Debug.LogError("CurseChoiceUI: descriptionPanel no asignado");
+            // Fallback: ir directo al siguiente enemigo
+            ContinueToNextEnemy();
+            return;
+        }
+        
+        if (selectedCurse == null)
+        {
+            Debug.LogError("No hay maldicion seleccionada");
+            ContinueToNextEnemy();
+            return;
+        }
+        
+        descriptionPanel.SetActive(true);
+        
+        // Actualizar textos
+        if (curseNameText != null)
+        {
+            curseNameText.text = selectedCurse.curseName;
+        }
+        
+        if (curseDescriptionText != null)
+        {
+            curseDescriptionText.text = selectedCurse.description;
+        }
+        
+        
+        if (curseIcon != null && selectedCurse.icon != null)
+        {
+            curseIcon.sprite = selectedCurse.icon;
+            curseIcon.gameObject.SetActive(true);
+        }
+        
+        Debug.Log("Panel de descripcion mostrado: " + selectedCurse.curseName);
+    }
+    
+    /// <summary>
+    /// Cuando el jugador presiona "Continuar" en el panel de descripcion
+    /// </summary>
+    void OnContinueButtonPressed()
+    {
+        Debug.Log("Usuario presiono continuar -> Siguiente enemigo");
+        
+        // Ocultar panel de descripcion
+        if (descriptionPanel != null)
+        {
+            descriptionPanel.SetActive(false);
+        }
+        
+        // Continuar al siguiente enemigo
+        ContinueToNextEnemy();
+    }
+    
+    /// <summary>
+    /// Finalizar la secuencia e iniciar el siguiente combate
+    /// </summary>
+    void ContinueToNextEnemy()
+    {
+        // Reactivar los paneles desactivados temporalmente
+        if (panelsToDisable != null)
+        {
+            foreach (GameObject panel in panelsToDisable)
+            {
+                if (panel != null)
+                {
+                    panel.SetActive(true);
+                }
+            }
+        }
+        if (combatManager != null)
+        {
+            combatManager.ContinueToNextEnemy();
+        }
+        else
+        {
+            Debug.LogError("CombatManager no asignado en CurseChoiceUI");
+        }
     }
 }

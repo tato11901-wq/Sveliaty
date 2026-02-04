@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using System.Collections;
 using System.Collections.Generic;
 
 public class CombatUIManager : MonoBehaviour
@@ -8,6 +9,7 @@ public class CombatUIManager : MonoBehaviour
     [Header("Referencias")]
     public CombatManager combatManager;
     public AbilityManager abilityManager;
+    public CurseManager curseManager;
 
     [Header("Enemy Display")]
     public Image enemySprite;
@@ -26,25 +28,18 @@ public class CombatUIManager : MonoBehaviour
     public Button attackButton;
     public TextMeshProUGUI cartasText;
 
-    [Header("Buttons - Modo PlayerChooses/RPG - NUEVO SISTEMA")]
+    [Header("Buttons - Modo PlayerChooses/RPG")]
     public GameObject playerChoosePanel;
-    
-    // Botones principales (selección de tipo)
     public Button fuerzaMainButton;
     public Button agilidadMainButton;
     public Button destrezaMainButton;
-    
-    // Textos de los botones principales
     public TextMeshProUGUI fuerzaMainText;
     public TextMeshProUGUI agilidadMainText;
     public TextMeshProUGUI destrezaMainText;
-    
-    // Paneles de habilidades (se muestran/ocultan)
     public GameObject fuerzaAbilitiesPanel;
     public GameObject agilidadAbilitiesPanel;
     public GameObject destrezaAbilitiesPanel;
     
-    // Botones de habilidades (3 por tipo)
     [Header("Fuerza Abilities")]
     public Button fuerzaAbility1Button;
     public Button fuerzaAbility2Button;
@@ -77,85 +72,72 @@ public class CombatUIManager : MonoBehaviour
     public Color colorNeutral = Color.white;
     public Color lockedAbilityColor = new Color(0.5f, 0.5f, 0.5f, 0.5f);
 
-    [Header("General Buttons")]
-
     [Header("Results Display")]
     public TextMeshProUGUI resultadoDadosText;
     public TextMeshProUGUI resultadoAtaqueText;
 
-    [Header("Victory/Defeat Panel - PASSIVE MODE")]
+    [Header("Victory/Defeat Panels")]
     public GameObject passiveEndPanel;
     public TextMeshProUGUI passiveEndMessageText;
     public Button passiveNextEnemyButton;
 
-    [Header("Victory Panel - PLAYERCHOOSES MODE")]
     public GameObject playerChoosesVictoryPanel;
     public TextMeshProUGUI playerChoosesVictoryText;
     public Button selectFuerzaButton;
     public Button selectAgilidadButton;
     public Button selectDestrezaButton;
 
-    [Header("Defeat Panel - BOTH MODES")]
     public GameObject defeatPanel;
     public TextMeshProUGUI defeatMessageText;
     public Button defeatNextEnemyButton;
 
-    // Estado actual del panel expandido
+    // NUEVO: Panel de notificación de maldición
+    [Header("Curse Notification Panel")]
+    public GameObject curseNotificationPanel;
+    public TextMeshProUGUI curseNotificationText;
+    public Button curseNotificationButton;
+
     private AffinityType? currentExpandedType = null;
 
 void Start()
 {
-    // Configurar botón de modo pasivo
     attackButton.onClick.AddListener(() => combatManager.PlayerAttempt());
 
-    // === NUEVO SISTEMA: Botones principales ===
     fuerzaMainButton.onClick.AddListener(() => ToggleAbilityPanel(AffinityType.Fuerza));
     agilidadMainButton.onClick.AddListener(() => ToggleAbilityPanel(AffinityType.Agilidad));
     destrezaMainButton.onClick.AddListener(() => ToggleAbilityPanel(AffinityType.Destreza));
 
-    // === NUEVO: Botones de habilidades ===
-    // Fuerza
     fuerzaAbility1Button.onClick.AddListener(() => UseAbility(AffinityType.Fuerza, 0));
     fuerzaAbility2Button.onClick.AddListener(() => UseAbility(AffinityType.Fuerza, 1));
     fuerzaAbility3Button.onClick.AddListener(() => UseAbility(AffinityType.Fuerza, 2));
     
-    // Agilidad
     agilidadAbility1Button.onClick.AddListener(() => UseAbility(AffinityType.Agilidad, 0));
     agilidadAbility2Button.onClick.AddListener(() => UseAbility(AffinityType.Agilidad, 1));
     agilidadAbility3Button.onClick.AddListener(() => UseAbility(AffinityType.Agilidad, 2));
     
-    // Destreza
     destrezaAbility1Button.onClick.AddListener(() => UseAbility(AffinityType.Destreza, 0));
     destrezaAbility2Button.onClick.AddListener(() => UseAbility(AffinityType.Destreza, 1));
     destrezaAbility3Button.onClick.AddListener(() => UseAbility(AffinityType.Destreza, 2));
 
-    // Botones de victoria/derrota
-    passiveNextEnemyButton.onClick.AddListener(() =>
-    {
-        passiveEndPanel.SetActive(false);
-        combatManager.NextEnemy();
-    });
-
-    defeatNextEnemyButton.onClick.AddListener(() =>
-    {
-        defeatPanel.SetActive(false);
-        combatManager.NextEnemy();
-    });
+    // MODIFICADO: Ya no va directo al siguiente enemigo
+    passiveNextEnemyButton.onClick.AddListener(() => OnVictoryPanelContinue());
+    defeatNextEnemyButton.onClick.AddListener(() => OnDefeatPanelContinue());
 
     selectFuerzaButton.onClick.AddListener(() => SelectCard(AffinityType.Fuerza));
     selectAgilidadButton.onClick.AddListener(() => SelectCard(AffinityType.Agilidad));
     selectDestrezaButton.onClick.AddListener(() => SelectCard(AffinityType.Destreza));
 
-    // Ocultar paneles de habilidades al inicio
+    // NUEVO: Botón de notificación de maldición
+    if (curseNotificationButton != null)
+    {
+        curseNotificationButton.onClick.AddListener(() => OnCurseNotificationContinue());
+    }
+
     HideAllAbilityPanels();
 }
 
-    /// <summary>
-    /// NUEVO: Alterna la visibilidad del panel de habilidades del tipo seleccionado
-    /// </summary>
     void ToggleAbilityPanel(AffinityType type)
     {
-        // Si ya está expandido este tipo, colapsar
         if (currentExpandedType == type)
         {
             HideAllAbilityPanels();
@@ -163,10 +145,8 @@ void Start()
             return;
         }
 
-        // Ocultar todos los paneles
         HideAllAbilityPanels();
 
-        // Mostrar el panel del tipo seleccionado
         GameObject panelToShow = type switch
         {
             AffinityType.Fuerza => fuerzaAbilitiesPanel,
@@ -179,18 +159,11 @@ void Start()
         {
             panelToShow.SetActive(true);
             currentExpandedType = type;
-            
-            // Actualizar los botones de habilidades
             UpdateAbilityButtons(type);
-            
-            // Seleccionar el tipo de ataque en el CombatManager
             combatManager.SelectAttackType(type);
         }
     }
 
-    /// <summary>
-    /// NUEVO: Oculta todos los paneles de habilidades
-    /// </summary>
     void HideAllAbilityPanels()
     {
         fuerzaAbilitiesPanel.SetActive(false);
@@ -198,16 +171,12 @@ void Start()
         destrezaAbilitiesPanel.SetActive(false);
     }
 
-    /// <summary>
-    /// NUEVO: Actualiza los botones de habilidades según las disponibles
-    /// </summary>
     void UpdateAbilityButtons(AffinityType type)
     {
         if (abilityManager == null) return;
 
         List<AbilityData> abilities = abilityManager.GetAvailableAbilities(type);
 
-        // Arrays de botones y textos según el tipo
         Button[] buttons = type switch
         {
             AffinityType.Fuerza => new[] { fuerzaAbility1Button, fuerzaAbility2Button, fuerzaAbility3Button },
@@ -226,18 +195,15 @@ void Start()
 
         if (buttons == null || texts == null) return;
 
-        // Configurar cada botón
         for (int i = 0; i < 3; i++)
         {
             if (i < abilities.Count)
             {
                 AbilityData ability = abilities[i];
                 
-                // Actualizar texto
                 string costInfo = GetAbilityCostString(ability);
                 texts[i].text = $"{ability.abilityName}\n{costInfo}";
 
-                // Verificar si puede usar la habilidad
                 bool canUse = abilityManager.CanUseAbility(
                     ability, 
                     combatManager.GetPlayerLife(), 
@@ -246,7 +212,6 @@ void Start()
 
                 buttons[i].interactable = canUse;
                 
-                // Color visual
                 Image buttonImage = buttons[i].GetComponent<Image>();
                 if (buttonImage != null)
                 {
@@ -255,7 +220,6 @@ void Start()
             }
             else
             {
-                // No hay habilidad en este slot
                 texts[i].text = "???";
                 buttons[i].interactable = false;
                 
@@ -268,28 +232,22 @@ void Start()
         }
     }
 
-    /// <summary>
-    /// NUEVO: Genera el string de costo de una habilidad
-    /// </summary>
     string GetAbilityCostString(AbilityData ability)
     {
         List<string> costs = new List<string>();
         
         if (ability.cardCost > 0)
-            costs.Add($"{ability.cardCost}");
+            costs.Add($"🎴{ability.cardCost}");
         
         if (ability.healthCost > 0)
-            costs.Add($"{ability.healthCost}");
+            costs.Add($"❤️{ability.healthCost}");
         
         if (ability.turnCost > 1)
-            costs.Add($"{ability.turnCost}");
+            costs.Add($"⏱️{ability.turnCost}");
 
-        return costs.Count > 0 ? string.Join(" ", costs) : "Sin coste";
+        return costs.Count > 0 ? string.Join(" ", costs) : "Gratis";
     }
 
-    /// <summary>
-    /// NUEVO: Usa una habilidad específica
-    /// </summary>
     void UseAbility(AffinityType type, int abilityIndex)
     {
         if (abilityManager == null) return;
@@ -299,22 +257,10 @@ void Start()
         if (abilityIndex < abilities.Count)
         {
             AbilityData ability = abilities[abilityIndex];
-            
-            // Seleccionar el tipo de ataque
             combatManager.SelectAttackType(type);
-            
-            // Ejecutar el ataque con la habilidad
             combatManager.PlayerAttempt(ability);
-            
-            // Actualizar UI de afinidades
             UpdateAffinitiesUI();
-            
-            // Actualizar botones de habilidades
             UpdateAbilityButtons(type);
-            
-            // Colapsar panel después de usar habilidad (opcional)
-            HideAllAbilityPanels();
-            currentExpandedType = null;
         }
     }
 
@@ -328,15 +274,17 @@ private void OnEnable()
     combatManager.OnAttemptsChanged += HandleAttemptsChanged;
     combatManager.OnWaitingForCardSelection += HandleWaitingForCardSelection;
 
-    // Sincronización visual
     passiveEndPanel.SetActive(false);
     playerChoosesVictoryPanel.SetActive(false);
     defeatPanel.SetActive(false);
+    
+    if (curseNotificationPanel != null)
+    {
+        curseNotificationPanel.SetActive(false);
+    }
 
-    // NUEVO: Ocultar paneles de habilidades
     HideAllAbilityPanels();
 
-    // Sincronizar combate si ya existe
     if (combatManager.HasActiveEnemy())
     {
         HandleCombatStart(combatManager.GetCurrentEnemy());
@@ -353,9 +301,9 @@ private void OnDisable()
     combatManager.OnAttemptsChanged -= HandleAttemptsChanged;
     combatManager.OnWaitingForCardSelection -= HandleWaitingForCardSelection;
 }
+
     void OnDestroy()
     {
-        // Desuscribirse
         if (combatManager != null)
         {
             combatManager.OnCombatStart -= HandleCombatStart;
@@ -368,12 +316,10 @@ private void OnDisable()
 
     void HandleCombatStart(EnemyInstance enemy)
     {
-        // Actualizar sprite y nombre
         enemySprite.sprite = enemy.enemyTierData.sprite;
         enemyNameText.text = enemy.enemyData.displayName;
         enemyTierText.text = enemy.enemyTierData.GetEnemyTier();
 
-        // Actualizar stats
         if (combatManager.GetCombatMode() == CombatMode.TraditionalRPG) 
         {
             vidaText.text = enemy.currentRPGHealth.ToString();
@@ -383,135 +329,111 @@ private void OnDisable()
             vidaText.text = enemy.enemyTierData.healthThreshold.ToString();
         }
 
-
         intentosText.text = enemy.attemptsRemaining.ToString();
         dadosText.text = enemy.enemyTierData.diceCount.ToString();
 
         UpdateModeUI();
-
-        // Actualizar vida del jugador
         UpdatePlayerLifeUI();
 
-        // Limpiar resultados
         resultadoDadosText.text = "-";
         resultadoAtaqueText.text = "-";
 
-        // Actualizar cartas
         UpdateCardsDisplay();
-        
-        // Actualizar UI de afinidades
         UpdateAffinitiesUI();
 
-        // NUEVO: Resetear paneles de habilidades
         HideAllAbilityPanels();
         currentExpandedType = null;
     }
 
-string GetEscaladoText(EnemyInstance enemy)
-{
-    if (combatManager.GetCombatMode() == CombatMode.PlayerChooses || 
-        combatManager.GetCombatMode() == CombatMode.TraditionalRPG)
+    string GetEscaladoText(EnemyInstance enemy)
     {
-        return " "; // No revelar debilidad en modos con elección
-    }
-    else
-    {
-        return enemy.enemyData.affinityType.ToString();
-    }
-}
-
-void HandleAttackResult(int roll, int bonus, int total, float multiplier)
-{
-    resultadoDadosText.text = roll.ToString();
-    
-    // Mostramos el total con color según efectividad
-    string colorTag = multiplier > 1.1f ? "<color=green>" : (multiplier < 0.9f ? "<color=red>" : "<color=white>");
-    string multText = multiplier != 1f ? $" ({colorTag}x{multiplier}</color>)" : "";
-    
-    resultadoAtaqueText.text = $"{total}{multText}";
-    
-    // Actualizar vida del enemigo en Traditional RPG
-    if (combatManager.GetCombatMode() == CombatMode.TraditionalRPG)
-    {
-        EnemyInstance currentEnemy = combatManager.GetCurrentEnemy();
-        vidaText.text = Mathf.Max(0, currentEnemy.currentRPGHealth).ToString();
-    }
-    
-    UpdateAffinitiesUI();
-
-    // NUEVO: Actualizar botones de habilidades si hay panel expandido
-    if (currentExpandedType.HasValue)
-    {
-        UpdateAbilityButtons(currentExpandedType.Value);
-    }
-}
-
-    void HandleCombatEnd(bool victory, int finalScore, AffinityType rewardCard, int lifeLost)
-{
-    // Actualizar vida del jugador
-    UpdatePlayerLifeUI();
-
-    // NUEVO: Colapsar paneles de habilidades
-    HideAllAbilityPanels();
-    currentExpandedType = null;
-
-    if (victory)
-    {
-        passiveEndPanel.SetActive(true);
-        
-        // Mensaje unificado para PlayerChooses y TraditionalRPG
-        if (rewardCard == default && 
-            (combatManager.GetCombatMode() == CombatMode.PlayerChooses || 
-             combatManager.GetCombatMode() == CombatMode.TraditionalRPG))
+        if (combatManager.GetCombatMode() == CombatMode.PlayerChooses || 
+            combatManager.GetCombatMode() == CombatMode.TraditionalRPG)
         {
-             passiveEndMessageText.text = $"¡VICTORIA!\n\nPuntuación: {finalScore}\n\nNo explotaste la debilidad y no hubo suerte con el botín.";
+            return " ";
         }
         else
         {
-            passiveEndMessageText.text = $"¡VICTORIA!\n\nPuntuación: {finalScore}\n\nObtienes 1 carta de:\n{rewardCard}";
+            return enemy.enemyData.affinityType.ToString();
         }
     }
-    else
-    {
-        defeatPanel.SetActive(true);
-        defeatMessageText.text = $"DERROTA\n\nPuntuación: {finalScore}";
 
-        if (lifeLost > 0)
+    void HandleAttackResult(int roll, int bonus, int total, float multiplier)
+    {
+        resultadoDadosText.text = roll.ToString();
+        
+        string colorTag = multiplier > 1.1f ? "<color=green>" : (multiplier < 0.9f ? "<color=red>" : "<color=white>");
+        string multText = multiplier != 1f ? $" ({colorTag}x{multiplier}</color>)" : "";
+        
+        resultadoAtaqueText.text = $"{total}{multText}";
+        
+        if (combatManager.GetCombatMode() == CombatMode.TraditionalRPG)
         {
-            defeatMessageText.text += $"\n\nPerdiste {lifeLost} vida.";
+            EnemyInstance currentEnemy = combatManager.GetCurrentEnemy();
+            vidaText.text = Mathf.Max(0, currentEnemy.currentRPGHealth).ToString();
+        }
+        
+        UpdateAffinitiesUI();
+
+        if (currentExpandedType.HasValue)
+        {
+            UpdateAbilityButtons(currentExpandedType.Value);
         }
     }
-    
-    UpdateCardsDisplay();
-}
+
+    void HandleCombatEnd(bool victory, int finalScore, AffinityType rewardCard, int lifeLost)
+    {
+        UpdatePlayerLifeUI();
+        HideAllAbilityPanels();
+        currentExpandedType = null;
+
+        if (victory)
+        {
+            passiveEndPanel.SetActive(true);
+            
+            if (rewardCard == default && 
+                (combatManager.GetCombatMode() == CombatMode.PlayerChooses || 
+                 combatManager.GetCombatMode() == CombatMode.TraditionalRPG))
+            {
+                 passiveEndMessageText.text = $"¡VICTORIA!\n\nPuntuación: {finalScore}\n\nNo explotaste la debilidad y no hubo suerte con el botín.";
+            }
+            else
+            {
+                passiveEndMessageText.text = $"¡VICTORIA!\n\nPuntuación: {finalScore}\n\nObtienes 1 carta de:\n{rewardCard}";
+            }
+        }
+        else
+        {
+            defeatPanel.SetActive(true);
+            defeatMessageText.text = $"DERROTA\n\nPuntuación: {finalScore}";
+
+            if (lifeLost > 0)
+            {
+                defeatMessageText.text += $"\n\nPerdiste {lifeLost} vida.";
+            }
+        }
+        
+        UpdateCardsDisplay();
+    }
 
     void HandleWaitingForCardSelection(int finalScore)
     {
-        // Mostrar panel de selección de carta en modo PLAYERCHOOSES
         playerChoosesVictoryPanel.SetActive(true);
         playerChoosesVictoryText.text = $"¡VICTORIA!\n\nPuntuación: {finalScore}\n\n Elige tu recompensa:";
     }
 
     void SelectCard(AffinityType selectedType)
     {
-        // Notificar al CombatManager la carta seleccionada
         combatManager.SelectRewardCard(selectedType);
-        
-        // Ocultar panel de selección
         playerChoosesVictoryPanel.SetActive(false);
-        
-        // Mostrar panel de victoria con la carta seleccionada
         passiveEndPanel.SetActive(true);
         passiveEndMessageText.text = $"¡WOW! ¡VICTORIA!\n\n Obtuviste 1 carta de:\n{selectedType}";
-        
-        // Actualizar display de cartas
         UpdateCardsDisplay();
     }
 
     void HandleAttemptsChanged(int remainingAttempts)
     {
         intentosText.text = remainingAttempts.ToString();
-        UpdateCardsDisplay();
     }
 
     void UpdateModeUI()
@@ -543,7 +465,6 @@ void HandleAttackResult(int roll, int bonus, int total, float multiplier)
         }
         else
         {
-            // NUEVO: Actualizar textos de botones principales con cantidad de cartas
             fuerzaMainText.text = $"ATACAR CON FUERZA\nCartas: {combatManager.GetCardsOfType(AffinityType.Fuerza)}";
             agilidadMainText.text = $"ATACAR CON AGILIDAD\nCartas: {combatManager.GetCardsOfType(AffinityType.Agilidad)}";
             destrezaMainText.text = $"ATACAR CON DESTREZA\nCartas: {combatManager.GetCardsOfType(AffinityType.Destreza)}";
@@ -551,57 +472,48 @@ void HandleAttackResult(int roll, int bonus, int total, float multiplier)
     }
 
     void UpdateButtonColor(Button button, AffinityType type, EnemyData enemy)
-{
-    Image buttonImage = button.GetComponent<Image>();
-    if (buttonImage == null) return;
-
-    // Si no ha sido descubierto, color gris/desconocido
-    if (!AffinityDiscoveryTracker.IsDiscovered(enemy.id, type))
     {
-        buttonImage.color = colorDesconocido;
-        return;
+        Image buttonImage = button.GetComponent<Image>();
+        if (buttonImage == null) return;
+
+        if (!AffinityDiscoveryTracker.IsDiscovered(enemy.id, type))
+        {
+            buttonImage.color = colorDesconocido;
+            return;
+        }
+
+        AffinityMultiplier multiplier = AffinityMultiplier.Neutral;
+
+        foreach (var relation in enemy.affinityRelations)
+        {
+            if (relation.type == type)
+            {
+                multiplier = relation.multiplier;
+                break;
+            }
+        }
+
+        buttonImage.color = multiplier switch
+        {
+            AffinityMultiplier.Weak => colorDebilidad,
+            AffinityMultiplier.Strong => colorResistencia,
+            AffinityMultiplier.Immune => colorInmunidad,
+            _ => colorNeutral
+        };
     }
 
-    // Si ya se descubrió, buscar qué multiplicador tiene este enemigo
-    AffinityMultiplier multiplier = AffinityMultiplier.Neutral; // Por defecto
-
-    foreach (var relation in enemy.affinityRelations)
+    public void UpdateAffinitiesUI()
     {
-        if (relation.type == type)
+        if (combatManager.GetCombatMode() == CombatMode.PlayerChooses || 
+            combatManager.GetCombatMode() == CombatMode.TraditionalRPG)
         {
-            multiplier = relation.multiplier;
-            break;
+            EnemyData enemy = combatManager.GetCurrentEnemy().enemyData;
+            UpdateButtonColor(fuerzaMainButton, AffinityType.Fuerza, enemy);
+            UpdateButtonColor(agilidadMainButton, AffinityType.Agilidad, enemy);
+            UpdateButtonColor(destrezaMainButton, AffinityType.Destreza, enemy);
         }
     }
 
-    // Asignar color según el multiplicador
-    buttonImage.color = multiplier switch
-    {
-        AffinityMultiplier.Weak => colorDebilidad,
-        AffinityMultiplier.Strong => colorResistencia,
-        AffinityMultiplier.Immune => colorInmunidad,
-        _ => colorNeutral
-    };
-
-    
-}
-public void UpdateAffinitiesUI()
-{
-    if (combatManager.GetCombatMode() == CombatMode.PlayerChooses || 
-        combatManager.GetCombatMode() == CombatMode.TraditionalRPG)
-    {
-        EnemyData enemy = combatManager.GetCurrentEnemy().enemyData;
-        
-        // Actualizar colores de los botones principales
-        UpdateButtonColor(fuerzaMainButton, AffinityType.Fuerza, enemy);
-        UpdateButtonColor(agilidadMainButton, AffinityType.Agilidad, enemy);
-        UpdateButtonColor(destrezaMainButton, AffinityType.Destreza, enemy);
-    }
-}
-
-    /// <summary>
-    /// Actualiza el display de vida del jugador
-    /// </summary>
     void UpdatePlayerLifeUI()
     {
         if (vidaActualText != null)
@@ -610,5 +522,71 @@ public void UpdateAffinitiesUI()
             int maxLife = combatManager.GetPlayerMaxLife();
             vidaActualText.text = $"Vida: {currentLife}/{maxLife}";
         }
+    }
+
+    // ========== NUEVO: SISTEMA DE FLUJO SECUENCIAL ==========
+
+    /// <summary>
+    /// Cuando el jugador presiona "Continuar" en el panel de victoria
+    /// </summary>
+    void OnVictoryPanelContinue()
+    {
+        passiveEndPanel.SetActive(false);
+        
+        // Verificar si hay evento de maldición
+        if (combatManager.ShouldShowCurseEvent())
+        {
+            ShowCurseNotification();
+        }
+        else
+        {
+            // No hay maldición, ir directo al siguiente enemigo
+            combatManager.ContinueToNextEnemy();
+        }
+    }
+
+    /// <summary>
+    /// Cuando el jugador presiona "Continuar" en el panel de derrota
+    /// </summary>
+    void OnDefeatPanelContinue()
+    {
+        defeatPanel.SetActive(false);
+        combatManager.ContinueToNextEnemy();
+    }
+
+    /// <summary>
+    /// Muestra el panel de notificación "¡Has sido maldecido!"
+    /// </summary>
+    void ShowCurseNotification()
+    {
+        if (curseNotificationPanel != null)
+        {
+            curseNotificationPanel.SetActive(true);
+            if (curseNotificationText != null)
+            {
+                curseNotificationText.text = "¡Has sido MALDECIDO!\n\nElige una carta...";
+            }
+        }
+        else
+        {
+            // Fallback: ir directo al evento de selección
+            OnCurseNotificationContinue();
+        }
+    }
+
+    /// <summary>
+    /// Cuando el jugador presiona "Continuar" en el panel de notificación
+    /// </summary>
+    void OnCurseNotificationContinue()
+    {
+        if (curseNotificationPanel != null)
+        {
+            curseNotificationPanel.SetActive(false);
+        }
+        
+        // Activar el evento de selección de 3 cartas
+        combatManager.TriggerCurseEventFromUI();
+        
+        // La secuencia continuará cuando el jugador seleccione una carta en CurseChoiceUI
     }
 }

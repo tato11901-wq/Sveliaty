@@ -41,21 +41,21 @@ public class CurseManager : MonoBehaviour
     public void TriggerCurseChoiceEvent()
     {
         List<CurseData> options = curseDatabase.GetThreeRandomCurses();
-        Debug.Log($"🎴 Opciones generadas: {options.Count}");
+        Debug.Log($"Opciones generadas: {options.Count}");
         
         if (OnCurseChoiceEvent == null)
         {
-            Debug.LogError("❌ OnCurseChoiceEvent no tiene suscriptores!");
+            Debug.LogError("OnCurseChoiceEvent no tiene suscriptores!");
             return;
         }
         
-        Debug.Log($"✅ Invocando evento con {OnCurseChoiceEvent.GetInvocationList().Length} suscriptores");
+        Debug.Log($"Invocando evento con {OnCurseChoiceEvent.GetInvocationList().Length} suscriptores");
         OnCurseChoiceEvent?.Invoke(options);
     }
     
     public void ObtainCurse(CurseData curse)
     {
-        Debug.Log($"🎴 Maldición obtenida: {curse.curseName}");
+        Debug.Log($"Maldición obtenida: {curse.curseName}");
         
         // Si es instantánea, aplicar efecto inmediatamente
         if (curse.activationType == CurseActivationType.Instant)
@@ -95,7 +95,7 @@ public class CurseManager : MonoBehaviour
                 int roll = UnityEngine.Random.Range(1, 13);
                 int effect = (roll % 2 == 0) ? roll : -roll;
                 // CombatManager aplicará el efecto de vida
-                Debug.Log($"🎲 Gambling: {roll} → {(effect > 0 ? "+" : "")}{effect} HP");
+                Debug.Log($"Gambling: {roll} → {(effect > 0 ? "+" : "")}{effect} HP");
                 break;
         }
     }
@@ -111,11 +111,11 @@ public class CurseManager : MonoBehaviour
             {
                 case CurseEffect.WeakenEnemy:
                     enemy.currentRPGHealth = Mathf.RoundToInt(enemy.currentRPGHealth * curse.data.enemyHealthMultiplier);
-                    Debug.Log($"💀 Enemigo debilitado a {enemy.currentRPGHealth} HP");
+                    Debug.Log($" Enemigo debilitado a {enemy.currentRPGHealth} HP");
                     break;
                 case CurseEffect.InvertVictoryCondition:
                     // Este se maneja en CombatManager
-                    Debug.Log($"🔄 Condición de victoria invertida");
+                    Debug.Log($"Condición de victoria invertida");
                     break;
             }
             
@@ -140,7 +140,7 @@ public class CurseManager : MonoBehaviour
             switch (curse.data.effectType)
             {
                 case CurseEffect.NegateCards:
-                    Debug.Log($"⚠️ Cartas negadas este turno");
+                    Debug.Log($"Cartas negadas este turno");
                     break;
             }
             
@@ -248,7 +248,7 @@ public class CurseManager : MonoBehaviour
         
         if (shield != null)
         {
-            Debug.Log($"🛡️ Escudo de derrota usado");
+            Debug.Log($" Escudo de derrota usado");
             activeCurses.Remove(shield);
         }
     }
