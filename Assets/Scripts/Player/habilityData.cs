@@ -1,6 +1,6 @@
 using UnityEngine;
 
-[CreateAssetMenu(menuName = "Sveliaty/Ability Data")]
+[CreateAssetMenu(menuName = "Sveliaty/Card/Ability Data")]
 public class AbilityData : ScriptableObject
 {
     public int id;

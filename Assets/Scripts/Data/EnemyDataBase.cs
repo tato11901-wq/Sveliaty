@@ -1,7 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 
-[CreateAssetMenu(menuName = "Sveliaty/Enemy Database")]
+[CreateAssetMenu(menuName = "Sveliaty/Data Base/Enemy Database")]
 public class EnemyDatabase : ScriptableObject
 {
     [Header("Configuración")]

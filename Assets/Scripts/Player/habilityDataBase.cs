@@ -2,7 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 
-[CreateAssetMenu(menuName = "Sveliaty/Ability Database")]
+[CreateAssetMenu(menuName = "Sveliaty/Data Base/Ability Database")]
 public class AbilityDatabase : ScriptableObject
 {
     public List<AbilityData> allAbilities;

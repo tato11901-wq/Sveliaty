@@ -12,11 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fb13d52ba97f6624a9acc67f9df3c4e1, type: 3}
   m_Name: Cura 2
   m_EditorClassIdentifier: 
-  id: 1
+  id: 2
   curseName: Cura 2
   description: edwadwa
   type: 0
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 6e976b0adc70e964899f1ec02569f707, type: 3}
   activationType: 0
   requiresPlayerActivation: 0
   mustActivateOnTurnOne: 0

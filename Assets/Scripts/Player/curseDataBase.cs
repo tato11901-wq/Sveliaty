@@ -2,7 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 
 
-[CreateAssetMenu(menuName = "Sveliaty/Curse Database")]
+[CreateAssetMenu(menuName = "Sveliaty/Data Base/Curse Database")]
 public class CurseDatabase : ScriptableObject
 {
     public List<CurseData> allCurses;

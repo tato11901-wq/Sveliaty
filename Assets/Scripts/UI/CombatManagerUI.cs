@@ -10,6 +10,9 @@ public class CombatUIManager : MonoBehaviour
     public CombatManager combatManager;
     public AbilityManager abilityManager;
     public CurseManager curseManager;
+    
+    [Header("Canvas Groups para ocultar durante maldiciones")]
+    public CanvasGroup combatUICanvasGroup; // Asignar el panel padre de toda la UI de combate
 
     [Header("Enemy Display")]
     public Image enemySprite;
@@ -33,6 +36,7 @@ public class CombatUIManager : MonoBehaviour
     public Button fuerzaMainButton;
     public Button agilidadMainButton;
     public Button destrezaMainButton;
+    public Button backButton; // Boton Volver
     public TextMeshProUGUI fuerzaMainText;
     public TextMeshProUGUI agilidadMainText;
     public TextMeshProUGUI destrezaMainText;
@@ -133,20 +137,22 @@ void Start()
         curseNotificationButton.onClick.AddListener(() => OnCurseNotificationContinue());
     }
 
+    // NUEVO: Botón Volver
+    if (backButton != null)
+    {
+        backButton.onClick.AddListener(() => OnBackButtonPressed());
+    }
+
     HideAllAbilityPanels();
+    HideBackButton();
 }
 
     void ToggleAbilityPanel(AffinityType type)
     {
-        if (currentExpandedType == type)
-        {
-            HideAllAbilityPanels();
-            currentExpandedType = null;
-            return;
-        }
-
+        // Ocultar todos los paneles de habilidades
         HideAllAbilityPanels();
 
+        // Mostrar el panel del tipo seleccionado
         GameObject panelToShow = type switch
         {
             AffinityType.Fuerza => fuerzaAbilitiesPanel,
@@ -161,6 +167,10 @@ void Start()
             currentExpandedType = type;
             UpdateAbilityButtons(type);
             combatManager.SelectAttackType(type);
+            
+            // NUEVO: Ocultar botones principales y mostrar botón Volver
+            HideMainButtons();
+            ShowBackButton();
         }
     }
 
@@ -316,6 +326,14 @@ private void OnDisable()
 
     void HandleCombatStart(EnemyInstance enemy)
     {
+        // Restaurar UI de combate
+        if (combatUICanvasGroup != null)
+        {
+            combatUICanvasGroup.alpha = 1f;
+            combatUICanvasGroup.interactable = true;
+            combatUICanvasGroup.blocksRaycasts = true;
+        }
+        
         enemySprite.sprite = enemy.enemyTierData.sprite;
         enemyNameText.text = enemy.enemyData.displayName;
         enemyTierText.text = enemy.enemyTierData.GetEnemyTier();
@@ -341,7 +359,10 @@ private void OnDisable()
         UpdateCardsDisplay();
         UpdateAffinitiesUI();
 
+        // NUEVO: Resetear estado de botones
         HideAllAbilityPanels();
+        ShowMainButtons();
+        HideBackButton();
         currentExpandedType = null;
     }
 
@@ -559,6 +580,14 @@ private void OnDisable()
     /// </summary>
     void ShowCurseNotification()
     {
+        // Ocultar UI de combate
+        if (combatUICanvasGroup != null)
+        {
+            combatUICanvasGroup.alpha = 0f;
+            combatUICanvasGroup.interactable = false;
+            combatUICanvasGroup.blocksRaycasts = false;
+        }
+        
         if (curseNotificationPanel != null)
         {
             curseNotificationPanel.SetActive(true);
@@ -588,5 +617,71 @@ private void OnDisable()
         combatManager.TriggerCurseEventFromUI();
         
         // La secuencia continuará cuando el jugador seleccione una carta en CurseChoiceUI
+    }
+
+    // ========== NUEVO: SISTEMA DE BOTON VOLVER ==========
+
+    /// <summary>
+    /// Cuando el jugador presiona el botón Volver
+    /// </summary>
+    void OnBackButtonPressed()
+    {
+        // Ocultar paneles de habilidades
+        HideAllAbilityPanels();
+        currentExpandedType = null;
+        
+        // Mostrar botones principales
+        ShowMainButtons();
+        
+        // Ocultar botón Volver
+        HideBackButton();
+    }
+
+    /// <summary>
+    /// Oculta los botones principales de selección de tipo
+    /// </summary>
+    void HideMainButtons()
+    {
+        if (fuerzaMainButton != null)
+            fuerzaMainButton.gameObject.SetActive(false);
+        
+        if (agilidadMainButton != null)
+            agilidadMainButton.gameObject.SetActive(false);
+        
+        if (destrezaMainButton != null)
+            destrezaMainButton.gameObject.SetActive(false);
+    }
+
+    /// <summary>
+    /// Muestra los botones principales de selección de tipo
+    /// </summary>
+    void ShowMainButtons()
+    {
+        if (fuerzaMainButton != null)
+            fuerzaMainButton.gameObject.SetActive(true);
+        
+        if (agilidadMainButton != null)
+            agilidadMainButton.gameObject.SetActive(true);
+        
+        if (destrezaMainButton != null)
+            destrezaMainButton.gameObject.SetActive(true);
+    }
+
+    /// <summary>
+    /// Muestra el botón Volver
+    /// </summary>
+    void ShowBackButton()
+    {
+        if (backButton != null)
+            backButton.gameObject.SetActive(true);
+    }
+
+    /// <summary>
+    /// Oculta el botón Volver
+    /// </summary>
+    void HideBackButton()
+    {
+        if (backButton != null)
+            backButton.gameObject.SetActive(false);
     }
 }

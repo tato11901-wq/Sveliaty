@@ -1,7 +1,7 @@
 using UnityEngine;
 
 
-[CreateAssetMenu(menuName = "Sveliaty/Curse Data")]
+[CreateAssetMenu(menuName = "Sveliaty/Card/Curse Data")]
 public class CurseData : ScriptableObject
 {
     public int id;

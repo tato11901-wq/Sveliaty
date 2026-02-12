@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-[CreateAssetMenu(menuName = "Sveliaty/Enemy Tier Data")]
+[CreateAssetMenu(menuName = "Sveliaty/Enemy/Enemy Tier Data")]
 public class EnemyTierData : ScriptableObject
 {
     public EnemyTier enemyTier; // Tier del enemigo

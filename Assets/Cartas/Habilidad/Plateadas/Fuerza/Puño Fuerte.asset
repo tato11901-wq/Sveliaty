@@ -36,5 +36,5 @@ MonoBehaviour:
   canAvoidTurnConsumption: 0
   avoidTurnChance: 0
   avoidTurnFailPenalty: 0
-  unlockRequirement: 5
+  unlockRequirement: 0
   isBasicAbility: 1

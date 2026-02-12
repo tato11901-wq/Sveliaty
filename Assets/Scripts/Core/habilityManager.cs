@@ -1,11 +1,12 @@
+using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEngine;
 
 public class AbilityManager : MonoBehaviour
 {
     [Header("References")]
     public AbilityDatabase abilityDatabase;
+    public PlayerManager playerManager;
     
     // Habilidades desbloqueadas
     private HashSet<int> unlockedAbilityIds = new HashSet<int>();
@@ -13,15 +14,15 @@ public class AbilityManager : MonoBehaviour
     // Sistema de gasto de cartas (configurable)
     public enum CardSpendingMode 
     { 
-        Absolute,      // Opción 1: Gasto permanente
-        PerInstance,   // Opción 2: Recupera al ganar
-        Relative       // Opción 3: Cuenta el máximo histórico
+        Absolute,      // Opcion 1: Gasto permanente
+        PerInstance,   // Opcion 2: Recupera al ganar
+        Relative       // Opcion 3: Cuenta el maximo historico
     }
     public CardSpendingMode spendingMode = CardSpendingMode.PerInstance;
     
-    // Para Opción 2 y 3
+    // Para Opcion 2 y 3
     private Dictionary<AffinityType, int> cardsSpentThisCombat = new Dictionary<AffinityType, int>();
-    private Dictionary<AffinityType, int> maxCardsEverHad = new Dictionary<AffinityType, int>(); // Opción 3
+    private Dictionary<AffinityType, int> maxCardsEverHad = new Dictionary<AffinityType, int>(); // Opcion 3
     
     void Start()
     {
@@ -30,7 +31,7 @@ public class AbilityManager : MonoBehaviour
     
     void InitializeAbilities()
     {
-        // Desbloquear habilidades básicas
+        // Desbloquear habilidades basicas
         foreach (var ability in abilityDatabase.allAbilities)
         {
             if (ability.isBasicAbility)
@@ -63,17 +64,17 @@ public class AbilityManager : MonoBehaviour
         if (ability.turnCost > remainingTurns) return false;
         
         // Verificar cartas suficientes
-        if (ability.cardCost > PlayerCombatData.cards[ability.affinityType]) return false;
+        if (ability.cardCost > playerManager.GetCards(ability.affinityType)) return false;
         
         return true;
     }
     
     public void SpendCards(AffinityType type, int amount)
     {
-        PlayerCombatData.cards[type] -= amount;
+        playerManager.RemoveCards(type, amount);
         cardsSpentThisCombat[type] += amount;
         
-        // Actualizar máximo histórico (Opción 3)
+        // Actualizar maximo historico (Opcion 3)
         UpdateMaxCards();
     }
     
@@ -81,10 +82,10 @@ public class AbilityManager : MonoBehaviour
     {
         if (spendingMode == CardSpendingMode.PerInstance)
         {
-            // Opción 2: Recuperar cartas gastadas
-            PlayerCombatData.cards[AffinityType.Fuerza] += cardsSpentThisCombat[AffinityType.Fuerza];
-            PlayerCombatData.cards[AffinityType.Agilidad] += cardsSpentThisCombat[AffinityType.Agilidad];
-            PlayerCombatData.cards[AffinityType.Destreza] += cardsSpentThisCombat[AffinityType.Destreza];
+            // Opcion 2: Recuperar cartas gastadas
+            playerManager.AddCards(AffinityType.Fuerza, cardsSpentThisCombat[AffinityType.Fuerza]);
+            playerManager.AddCards(AffinityType.Agilidad, cardsSpentThisCombat[AffinityType.Agilidad]);
+            playerManager.AddCards(AffinityType.Destreza, cardsSpentThisCombat[AffinityType.Destreza]);
         }
         
         // Resetear contador de gasto
@@ -103,7 +104,7 @@ public class AbilityManager : MonoBehaviour
             // Verificar si cumple requisito de desbloqueo
             int currentCards = spendingMode == CardSpendingMode.Relative 
                 ? maxCardsEverHad[ability.affinityType]
-                : PlayerCombatData.cards[ability.affinityType];
+                : playerManager.GetCards(ability.affinityType);
             
             if (currentCards >= ability.unlockRequirement)
             {
@@ -115,14 +116,14 @@ public class AbilityManager : MonoBehaviour
     void UnlockAbility(int abilityId)
     {
         unlockedAbilityIds.Add(abilityId);
-        Debug.Log($"🎉 Habilidad desbloqueada: {abilityDatabase.GetAbilityById(abilityId).abilityName}");
+        Debug.Log("Habilidad desbloqueada: " + abilityDatabase.GetAbilityById(abilityId).abilityName);
     }
     
     void UpdateMaxCards()
     {
         foreach (AffinityType type in System.Enum.GetValues(typeof(AffinityType)))
         {
-            int current = PlayerCombatData.cards[type];
+            int current = playerManager.GetCards(type);
             if (!maxCardsEverHad.ContainsKey(type) || current > maxCardsEverHad[type])
             {
                 maxCardsEverHad[type] = current;
@@ -135,7 +136,7 @@ public class AbilityManager : MonoBehaviour
         return spendingMode switch
         {
             CardSpendingMode.Relative => maxCardsEverHad[type],
-            _ => PlayerCombatData.cards[type]
+            _ => playerManager.GetCards(type)
         };
     }
 }

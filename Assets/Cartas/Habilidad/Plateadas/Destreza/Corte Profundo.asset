@@ -28,7 +28,7 @@ MonoBehaviour:
   affinityMultiplierBonus: 0
   cardMultiplier: 2
   hasSuccessChance: 1
-  successChance: 60
+  successChance: 80
   hasOnKillEffect: 0
   onKillHealthReward: 0
   hasOnFailEffect: 0
