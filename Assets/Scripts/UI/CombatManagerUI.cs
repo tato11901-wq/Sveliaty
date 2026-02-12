@@ -247,13 +247,13 @@ void Start()
         List<string> costs = new List<string>();
         
         if (ability.cardCost > 0)
-            costs.Add($"🎴{ability.cardCost}");
+            costs.Add($"{ability.cardCost}");
         
         if (ability.healthCost > 0)
-            costs.Add($"❤️{ability.healthCost}");
+            costs.Add($"{ability.healthCost}");
         
         if (ability.turnCost > 1)
-            costs.Add($"⏱️{ability.turnCost}");
+            costs.Add($"⏱{ability.turnCost}");
 
         return costs.Count > 0 ? string.Join(" ", costs) : "Gratis";
     }
@@ -455,6 +455,8 @@ private void OnDisable()
     void HandleAttemptsChanged(int remainingAttempts)
     {
         intentosText.text = remainingAttempts.ToString();
+        UpdatePlayerLifeUI();
+        UpdateCardsDisplay();
     }
 
     void UpdateModeUI()

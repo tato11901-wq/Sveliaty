@@ -12,15 +12,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fb13d52ba97f6624a9acc67f9df3c4e1, type: 3}
   m_Name: Proteccion Contra Muerte
   m_EditorClassIdentifier: 
-  id: 0
-  curseName: 
-  description: 
+  id: 9
+  curseName: "Negacion de Da\xF1o"
+  description: "Niega el da\xF1o por perder en el siguiente combate"
   type: 0
   icon: {fileID: 0}
-  activationType: 0
+  activationType: 4
   requiresPlayerActivation: 0
   mustActivateOnTurnOne: 0
-  effectType: 0
+  effectType: 7
   effectValue: 0
   duration: 0
   passiveOnly: 0
