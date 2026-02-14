@@ -645,6 +645,54 @@ RectTransform:
   m_AnchoredPosition: {x: 405.56, y: -123}
   m_SizeDelta: {x: 145.0067, y: 22.9317}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!1 &64949007
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 64949008}
+  - component: {fileID: 64949009}
+  m_Layer: 0
+  m_Name: BossRush Manager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &64949008
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 64949007}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 109099123}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &64949009
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 64949007}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cd3ca9d5f65f4f147835f8bccb221cb0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  combatManager: {fileID: 639177312}
+  playerManager: {fileID: 1449721702}
+  enemyDatabase: {fileID: 11400000, guid: 9f9d928981baa754d8e451d308d764e3, type: 2}
+  defaultMode: 2
 --- !u!1 &100254352
 GameObject:
   m_ObjectHideFlags: 0
@@ -800,6 +848,7 @@ Transform:
   - {fileID: 368540368}
   - {fileID: 154888533}
   - {fileID: 1449721701}
+  - {fileID: 64949008}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &154888532
@@ -1417,6 +1466,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1458323793d352948a77db9dcd77f9b0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  bossRushManager: {fileID: 64949009}
   combatManager: {fileID: 639177312}
   abilityManager: {fileID: 154888534}
   curseManager: {fileID: 368540369}
@@ -2686,7 +2736,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 706094e9b0100d345a8f5e03afdec118, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  enemyDatabase: {fileID: 11400000, guid: 9f9d928981baa754d8e451d308d764e3, type: 2}
   playerManager: {fileID: 1449721702}
   abilityManager: {fileID: 154888534}
   curseManager: {fileID: 368540369}
@@ -3812,7 +3861,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 0.392}
+  m_Color: {r: 0, g: 0, b: 0, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -6773,11 +6822,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 680739faf14b9b1418e889177f05299e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  bossRushManager: {fileID: 64949009}
   combatManager: {fileID: 639177312}
   curseManager: {fileID: 368540369}
-  panelsToDisable:
-  - {fileID: 1323742221}
-  - {fileID: 470836413}
   threeCardsPanel: {fileID: 826946023}
   cardButtons:
   - {fileID: 2004372366}
@@ -6787,6 +6834,7 @@ MonoBehaviour:
   curseIcon: {fileID: 784859909}
   curseNameText: {fileID: 1949520212}
   curseDescriptionText: {fileID: 1297979996}
+  curseTypeText: {fileID: 0}
   continueButton: {fileID: 1468958391}
 --- !u!114 &1190563947
 MonoBehaviour:
@@ -7270,8 +7318,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   startMenuPanel: {fileID: 610908569}
-  combatPanel: {fileID: 387176751}
+  gameplayPanel: {fileID: 387176751}
   gameOverPanel: {fileID: 1600499639}
+  bossRushManager: {fileID: 64949009}
   combatManager: {fileID: 639177312}
   startMenuUI: {fileID: 610908573}
   gameOverUI: {fileID: 1600499643}

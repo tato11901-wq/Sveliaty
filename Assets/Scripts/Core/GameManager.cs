@@ -2,7 +2,7 @@ using UnityEngine;
 
 /// <summary>
 /// Controlador principal del flujo del juego
-/// Gestiona: Menú Inicio -> Combate -> Game Over -> Menú Inicio
+/// Gestiona: Menu Inicio -> Modo de Juego -> Game Over -> Menu Inicio
 /// </summary>
 public class GameManager : MonoBehaviour
 {
@@ -10,21 +10,20 @@ public class GameManager : MonoBehaviour
 
     [Header("Referencias de Paneles")]
     public GameObject startMenuPanel;
-    public GameObject combatPanel;
+    public GameObject gameplayPanel; // Panel que contiene toda la UI de juego
     public GameObject gameOverPanel;
 
     [Header("Referencias de Managers")]
+    public BossRushManager bossRushManager; // NUEVO: Ahora usa BossRushManager
     public CombatManager combatManager;
     public StartMenuUI startMenuUI;
     public GameOverUI gameOverUI;
 
     [Header("Estado del Juego")]
-    private CombatMode selectedMode;
     private bool gameInProgress = false;
 
     void Awake()
     {
-        // Singleton pattern
         if (Instance == null)
         {
             Instance = this;
@@ -38,86 +37,95 @@ public class GameManager : MonoBehaviour
 
     void Start()
     {
-        // Suscribirse al evento de Game Over del CombatManager
+        // Suscribirse a eventos
         if (combatManager != null)
         {
             combatManager.GameOver += HandleGameOver;
         }
 
-        // Iniciar en el menú de inicio
+        if (bossRushManager != null)
+        {
+            bossRushManager.OnRunStarted += HandleRunStarted;
+            bossRushManager.OnRunEnded += HandleRunEnded;
+        }
+
         ShowStartMenu();
     }
 
     void OnDestroy()
     {
-        // Desuscribirse del evento
         if (combatManager != null)
         {
             combatManager.GameOver -= HandleGameOver;
         }
+
+        if (bossRushManager != null)
+        {
+            bossRushManager.OnRunStarted -= HandleRunStarted;
+            bossRushManager.OnRunEnded -= HandleRunEnded;
+        }
     }
 
-    /// <summary>
-    /// Muestra el menú de inicio
-    /// </summary>
     public void ShowStartMenu()
     {
-        Debug.Log("Mostrando menú de inicio");
+        Debug.Log("Mostrando menu de inicio");
         
         startMenuPanel.SetActive(true);
-        combatPanel.SetActive(false);
+        gameplayPanel.SetActive(false);
         gameOverPanel.SetActive(false);
         
         gameInProgress = false;
-        
     }
 
     /// <summary>
-    /// Inicia una nueva run con el modo seleccionado
+    /// Inicia una nueva run (ahora delega a BossRushManager)
     /// </summary>
     public void StartNewRun(CombatMode mode)
     {
-        Debug.Log($"Iniciando nueva run en modo: {mode}");
+        Debug.Log("GameManager: Iniciando nueva run en modo " + mode);
         
-        selectedMode = mode;
         gameInProgress = true;
 
-        // Ocultar menú de inicio
         startMenuPanel.SetActive(false);
-
-        // Mostrar panel de combate
-        combatPanel.SetActive(true);
+        gameplayPanel.SetActive(true);
         gameOverPanel.SetActive(false);
 
-        // Inicializar el combate con el modo seleccionado
-        combatManager.StartNewRun(mode);
+        // NUEVO: Delegar a BossRushManager
+        if (bossRushManager != null)
+        {
+            bossRushManager.StartNewRun(mode);
+        }
+        else
+        {
+            Debug.LogError("BossRushManager no asignado");
+        }
     }
 
-    /// <summary>
-    /// Maneja el evento de Game Over
-    /// </summary>
+    void HandleRunStarted(CombatMode mode)
+    {
+        Debug.Log("Run iniciada en modo " + mode);
+    }
+
+    void HandleRunEnded(int finalScore, int enemiesDefeated)
+    {
+        Debug.Log("Run terminada - Score: " + finalScore + ", Enemigos: " + enemiesDefeated);
+    }
+
     void HandleGameOver(int finalScore, int fuerzaCards, int agilidadCards, int destrezaCards, EnemyInstance defeatedBy)
     {
-        Debug.Log($"GAME OVER - Score: {finalScore}");
+        Debug.Log("GAME OVER - Score: " + finalScore);
         
         gameInProgress = false;
 
-        // Ocultar panel de combate
-        combatPanel.SetActive(false);
-        
-        // Mostrar panel de Game Over
+        gameplayPanel.SetActive(false);
         gameOverPanel.SetActive(true);
 
-        // Pasar datos al GameOverUI
         if (gameOverUI != null)
         {
             gameOverUI.ShowGameOver(finalScore, fuerzaCards, agilidadCards, destrezaCards, defeatedBy);
         }
     }
 
-    /// <summary>
-    /// Reiniciar el juego
-    /// </summary>
     public void RestartGame()
     {
         Debug.Log("Reiniciando juego");
@@ -126,5 +134,4 @@ public class GameManager : MonoBehaviour
 
     // GETTERS
     public bool IsGameInProgress() => gameInProgress;
-    public CombatMode GetSelectedMode() => selectedMode;
 }

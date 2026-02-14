@@ -1,83 +1,51 @@
 using UnityEngine;
 using System;
-using System.Collections;
-using UnityEngine.SocialPlatforms.Impl;
 
+/// <summary>
+/// Gestor de los combates
+/// Responsabilidades:
+/// - Iniciar combates con enemigos específicos
+/// - Gestionar la lógica de ataques, victorias y derrotas
+/// - Interactuar con PlayerManager para modificar vida, cartas y puntuación
+/// - Interactuar con CurseManager para aplicar efectos de maldiciones
+/// </summary>
 public class CombatManager : MonoBehaviour
 {
-    [Header("Boss Rush Setup")]
-    public EnemyDatabase enemyDatabase;
-
     [Header("Manager References")]
     public PlayerManager playerManager;
     public AbilityManager abilityManager;
     public CurseManager curseManager;
 
     [Header("Combat Settings")]
-    private CombatMode combatMode = CombatMode.Passive;
     [Range(0, 100)] public float randomCardChance = 30f;
 
-    // Estado del combate
+    // Estado del combate ACTUAL
+    private CombatMode currentCombatMode;
     private EnemyInstance currentEnemy;
-    private AffinityType selectedAttackType; // Tipo de ataque seleccionado en PlayerChooses/RPG
+    private AffinityType selectedAttackType;
     private bool combatEnded = false;
     private bool waitingForCardSelection = false;
     private bool isProcessingPostCombat = false;
 
-    // Contador de turnos
+    // Contador de turnos del combate ACTUAL
     private int turnsUsedThisCombat = 0;
     private int currentTurnNumber = 0;
 
     // Eventos para la UI
     public event Action<EnemyInstance> OnCombatStart;
     public event Action<int, int, int, float> OnAttackResult;
-    public event Action<bool, int, AffinityType, int> OnCombatEnd;
+    public event Action<bool, int, AffinityType, int> OnCombatEnd; // (victory, score, cardReward, lifeLost)
     public event Action<int> OnAttemptsChanged;
     public event Action<int> OnWaitingForCardSelection;
-    public event Action<int, int, int, int, EnemyInstance> GameOver;
-    
-    public event Action OnReadyForNextEnemy;
+    public event Action<int, int, int, int, EnemyInstance> GameOver; // (score, fuerza, agilidad, destreza, defeatedBy)
 
-    public void StartNewRun(CombatMode mode)
+    /// <summary>
+    /// Inicia UN combate específico (llamado por BossRushManager)
+    /// </summary>
+    public void StartCombat(EnemyData enemyData, EnemyTier tier, CombatMode mode)
     {
-        Debug.Log("Iniciando nueva run en modo: " + mode);
-        
-        combatMode = mode;
-        
-        // Inicializar jugador
-        if (playerManager != null)
-        {
-            playerManager.InitializeForNewRun(5);
-        }
-        else
-        {
-            Debug.LogError("PlayerManager no asignado en CombatManager");
-        }
-        
-        StartRandomCombat();
-    }
+        currentCombatMode = mode;
 
-    public void StartRandomCombat()
-    {
-        if (enemyDatabase == null)
-        {
-            Debug.LogError("No hay EnemyDatabase asignado");
-            return;
-        }
-
-        var (randomEnemy, randomTier) = enemyDatabase.GetRandomEnemy();
-
-        if (randomEnemy == null)
-        {
-            Debug.LogError("No se pudo obtener enemigo aleatorio");
-            return;
-        }
-
-        StartCombat(randomEnemy, randomTier);
-    }
-
-    void StartCombat(EnemyData enemyData, EnemyTier tier)
-    {
         EnemyTierData tierData = GetTierData(enemyData, tier);
 
         if (tierData == null)
@@ -108,7 +76,7 @@ public class CombatManager : MonoBehaviour
             curseManager.OnPreCombat(currentEnemy);
         }
 
-        Debug.Log("BOSS RUSH: " + currentEnemy.enemyData.displayName + " (" + tierData.enemyTier + ")");
+        Debug.Log("COMBATE: " + currentEnemy.enemyData.displayName + " (" + tierData.enemyTier + ")");
 
         OnCombatStart?.Invoke(currentEnemy);
     }
@@ -129,7 +97,7 @@ public class CombatManager : MonoBehaviour
 
     public void SelectAttackType(AffinityType type)
     {
-        if (combatMode != CombatMode.PlayerChooses && combatMode != CombatMode.TraditionalRPG)
+        if (currentCombatMode != CombatMode.PlayerChooses && currentCombatMode != CombatMode.TraditionalRPG)
         {
             Debug.LogWarning("Solo puedes seleccionar ataque en modo PlayerChooses");
             return;
@@ -141,14 +109,14 @@ public class CombatManager : MonoBehaviour
 
     AffinityType GetAttackType()
     {
-        return combatMode == CombatMode.Passive 
+        return currentCombatMode == CombatMode.Passive 
             ? currentEnemy.enemyData.affinityType 
             : selectedAttackType;
     }
 
     float GetAffinityMultiplier(AffinityType attackType)
     {
-        if (combatMode == CombatMode.Passive)
+        if (currentCombatMode == CombatMode.Passive)
             return 1f;
 
         if (currentEnemy.enemyData.affinityRelations == null)
@@ -190,14 +158,12 @@ public class CombatManager : MonoBehaviour
             return;
         }
         
-        // Aplicar costos
         playerManager.ModifyHealth(-ability.healthCost);
         if (abilityManager != null && ability.cardCost > 0)
         {
             abilityManager.SpendCards(ability.affinityType, ability.cardCost);
         }
         
-        // Verificar probabilidad de exito
         bool success = true;
         if (ability.hasSuccessChance)
         {
@@ -219,12 +185,10 @@ public class CombatManager : MonoBehaviour
             }
         }
         
-        // Calcular dados
         int diceCount = CalculateDiceCount(ability);
         int diceMax = ability.diceMaxValue > 0 ? ability.diceMaxValue : 12;
         int roll = RollDice(diceCount, diceMax);
         
-        // Calcular bonus de cartas
         AffinityType attackType = ability.affinityType;
         int cardBonus = playerManager.GetCards(attackType);
         
@@ -239,30 +203,28 @@ public class CombatManager : MonoBehaviour
             Debug.Log("Tus cartas estan negadas");
         }
         
-        // Calcular multiplicador de afinidad
         float multiplier = GetAffinityMultiplier(attackType);
         multiplier += ability.affinityMultiplierBonus;
         
-        if (combatMode == CombatMode.PlayerChooses || combatMode == CombatMode.TraditionalRPG)
+        if (currentCombatMode == CombatMode.PlayerChooses || currentCombatMode == CombatMode.TraditionalRPG)
         {
             AffinityDiscoveryTracker.RegisterDiscovery(currentEnemy.enemyData.id, attackType);
         }
         
-        // Calcular total segun modo
         int totalBase = 0;
         int totalFinal = 0;
         
-        if (combatMode == CombatMode.TraditionalRPG)
+        if (currentCombatMode == CombatMode.TraditionalRPG)
         {
             totalBase = roll + cardBonus;
             totalFinal = Mathf.RoundToInt(totalBase * multiplier);
         }
-        else if (combatMode == CombatMode.Passive)
+        else if (currentCombatMode == CombatMode.Passive)
         {
             totalBase = roll + cardBonus;
             totalFinal = totalBase;
         }
-        else if (combatMode == CombatMode.PlayerChooses)
+        else if (currentCombatMode == CombatMode.PlayerChooses)
         {
             totalBase = roll;
             totalFinal = Mathf.RoundToInt(totalBase + (cardBonus * multiplier));
@@ -310,7 +272,7 @@ public class CombatManager : MonoBehaviour
 
     int CalculateDiceCount(AbilityData ability)
     {
-        int baseCount = combatMode == CombatMode.TraditionalRPG 
+        int baseCount = currentCombatMode == CombatMode.TraditionalRPG 
             ? currentEnemy.currentRPGDiceCount 
             : currentEnemy.enemyTierData.diceCount;
         
@@ -339,7 +301,7 @@ public class CombatManager : MonoBehaviour
     {
         bool victory = false;
         
-        if (combatMode == CombatMode.TraditionalRPG)
+        if (currentCombatMode == CombatMode.TraditionalRPG)
         {
             currentEnemy.currentRPGHealth -= totalFinal;
             
@@ -424,17 +386,16 @@ public class CombatManager : MonoBehaviour
                 abilityManager.CheckUnlocks();
             }
 
-            // Registrar estadisticas
             playerManager.RegisterEnemyDefeated();
             playerManager.RegisterCombatWon();
 
-            if (combatMode == CombatMode.Passive)
+            if (currentCombatMode == CombatMode.Passive)
             {
                 rewardCard = GetRandomAffinityType();
                 playerManager.AddCards(rewardCard, 1);
                 OnCombatEnd?.Invoke(victory, finalScore, rewardCard, 0);
             }
-            else if (combatMode == CombatMode.PlayerChooses || combatMode == CombatMode.TraditionalRPG)
+            else if (currentCombatMode == CombatMode.PlayerChooses || currentCombatMode == CombatMode.TraditionalRPG)
             {
                 if (lastMultiplier >= 1.5f) 
                 {
@@ -497,40 +458,6 @@ public class CombatManager : MonoBehaviour
         }
     }
 
-    public bool ShouldShowCurseEvent()
-    {
-        if (curseManager == null) return false;
-        
-        bool isSpirit = currentEnemy.enemyData.isSpirit;
-        return curseManager.ShouldTriggerCurseEvent(turnsUsedThisCombat, isSpirit);
-    }
-
-    public void TriggerCurseEventFromUI()
-    {
-        if (curseManager != null)
-        {
-            curseManager.TriggerCurseChoiceEvent();
-        }
-    }
-
-    public void ContinueToNextEnemy()
-    {
-        Debug.Log("Continuando al siguiente enemigo");
-        isProcessingPostCombat = false;
-        StartRandomCombat();
-    }
-    
-    public void EndRun()
-    {
-        GameOver?.Invoke(
-            playerManager.GetScore(), 
-            playerManager.GetCards(AffinityType.Fuerza), 
-            playerManager.GetCards(AffinityType.Agilidad), 
-            playerManager.GetCards(AffinityType.Destreza), 
-            currentEnemy
-        );
-    }
-
     public void SelectRewardCard(AffinityType selectedCard)
     {
         if (!waitingForCardSelection)
@@ -552,22 +479,6 @@ public class CombatManager : MonoBehaviour
     {
         AffinityType[] allTypes = (AffinityType[])System.Enum.GetValues(typeof(AffinityType));
         return allTypes[UnityEngine.Random.Range(0, allTypes.Length)];
-    }
-
-    public void NextEnemy()
-    {
-        StartRandomCombat();
-    }
-
-    public int GetCurrentCards()
-    {
-        if (currentEnemy == null) return 0;
-
-        AffinityType type = combatMode == CombatMode.Passive 
-            ? currentEnemy.enemyData.affinityType 
-            : selectedAttackType;
-
-        return playerManager.GetCards(type);
     }
 
     public int CalculateScorePerCombat(float multiplier)
@@ -595,21 +506,47 @@ public class CombatManager : MonoBehaviour
         return Newscore;
     }
 
-    public int GetCardsOfType(AffinityType type)
+    // Para maldiciones: verificar si debe mostrar evento
+    public bool ShouldShowCurseEvent()
     {
-        return playerManager.GetCards(type);
+        if (curseManager == null) return false;
+        
+        bool isSpirit = currentEnemy.enemyData.isSpirit;
+        return curseManager.ShouldTriggerCurseEvent(turnsUsedThisCombat, isSpirit);
     }
 
-    public bool HasActiveEnemy()
+    public void TriggerCurseEventFromUI()
     {
-        return currentEnemy != null;
+        if (curseManager != null)
+        {
+            curseManager.TriggerCurseChoiceEvent();
+        }
+    }
+
+    // Resetear flag de procesamiento (llamado desde BossRushManager)
+    public void ResetPostCombatFlag()
+    {
+        isProcessingPostCombat = false;
     }
 
     // GETTERS
     public EnemyInstance GetCurrentEnemy() => currentEnemy;
     public bool IsCombatEnded() => combatEnded;
-    public CombatMode GetCombatMode() => combatMode;
+    public CombatMode GetCombatMode() => currentCombatMode;
     public int GetPlayerLife() => playerManager != null ? playerManager.GetCurrentLife() : 0;
     public int GetPlayerMaxLife() => playerManager != null ? playerManager.GetMaxLife() : 100;
     public int GetCurrentTurnNumber() => currentTurnNumber;
+    public int GetCardsOfType(AffinityType type) => playerManager.GetCards(type);
+    public bool HasActiveEnemy() => currentEnemy != null;
+    
+    public int GetCurrentCards()
+    {
+        if (currentEnemy == null) return 0;
+
+        AffinityType type = currentCombatMode == CombatMode.Passive 
+            ? currentEnemy.enemyData.affinityType 
+            : selectedAttackType;
+
+        return playerManager.GetCards(type);
+    }
 }

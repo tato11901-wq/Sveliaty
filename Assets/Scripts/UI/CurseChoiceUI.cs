@@ -7,11 +7,9 @@ using System.Collections.Generic;
 public class CurseChoiceUI : MonoBehaviour
 {
     [Header("References")]
+    public BossRushManager bossRushManager; // NUEVO: Para continuar al siguiente combate
     public CombatManager combatManager;
     public CurseManager curseManager;
-
-    [Header("Paneles a desactivar temporalmente") ]
-    public GameObject[] panelsToDisable;
     
     [Header("UI Elements - Fase 1: 3 Cartas")]
     public GameObject threeCardsPanel;
@@ -22,6 +20,7 @@ public class CurseChoiceUI : MonoBehaviour
     public Image curseIcon; // Icono de la maldicion seleccionada
     public TextMeshProUGUI curseNameText;
     public TextMeshProUGUI curseDescriptionText;
+    public TextMeshProUGUI curseTypeText; // "Positiva" / "Negativa" / "Gambling"
     public Button continueButton;
     
     private List<CurseData> currentOptions;
@@ -68,19 +67,6 @@ public class CurseChoiceUI : MonoBehaviour
     /// </summary>
     void ShowChoiceEvent(List<CurseData> options)
     {
-
-        // Desactivar otros paneles de UI
-        if (panelsToDisable != null)
-        {
-            foreach (GameObject panel in panelsToDisable)
-            {
-                if (panel != null)
-                {
-                    panel.SetActive(false);
-                }
-            }
-        }
-        
         Debug.Log("CurseChoiceUI: ShowChoiceEvent llamado con " + options.Count + " opciones");
         
         if (threeCardsPanel == null)
@@ -91,8 +77,7 @@ public class CurseChoiceUI : MonoBehaviour
         
         currentOptions = options;
         selectedCurse = null;
-
-
+        
         // Mostrar panel de 3 cartas
         threeCardsPanel.SetActive(true);
         
@@ -202,6 +187,17 @@ public class CurseChoiceUI : MonoBehaviour
             curseDescriptionText.text = selectedCurse.description;
         }
         
+        if (curseTypeText != null)
+        {
+            string typeLabel = selectedCurse.type switch
+            {
+                CurseType.Positive => "<color=green>POSITIVA</color>",
+                CurseType.Negative => "<color=red>NEGATIVA</color>",
+                CurseType.Gambling => "<color=yellow>AZAR</color>",
+                _ => "DESCONOCIDA"
+            };
+            curseTypeText.text = typeLabel;
+        }
         
         if (curseIcon != null && selectedCurse.icon != null)
         {
@@ -234,24 +230,14 @@ public class CurseChoiceUI : MonoBehaviour
     /// </summary>
     void ContinueToNextEnemy()
     {
-        // Reactivar los paneles desactivados temporalmente
-        if (panelsToDisable != null)
+        if (bossRushManager != null)
         {
-            foreach (GameObject panel in panelsToDisable)
-            {
-                if (panel != null)
-                {
-                    panel.SetActive(true);
-                }
-            }
-        }
-        if (combatManager != null)
-        {
-            combatManager.ContinueToNextEnemy();
+            combatManager.ResetPostCombatFlag();
+            bossRushManager.ContinueToNextCombat();
         }
         else
         {
-            Debug.LogError("CombatManager no asignado en CurseChoiceUI");
+            Debug.LogError("BossRushManager no asignado en CurseChoiceUI");
         }
     }
 }

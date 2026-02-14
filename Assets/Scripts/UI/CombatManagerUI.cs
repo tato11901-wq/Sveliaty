@@ -7,6 +7,7 @@ using System.Collections.Generic;
 public class CombatUIManager : MonoBehaviour
 {
     [Header("Referencias")]
+    public BossRushManager bossRushManager; // NUEVO: Para el flujo entre combates
     public CombatManager combatManager;
     public AbilityManager abilityManager;
     public CurseManager curseManager;
@@ -247,13 +248,13 @@ void Start()
         List<string> costs = new List<string>();
         
         if (ability.cardCost > 0)
-            costs.Add($"{ability.cardCost}");
+            costs.Add($"🎴{ability.cardCost}");
         
         if (ability.healthCost > 0)
-            costs.Add($"{ability.healthCost}");
+            costs.Add($"❤️{ability.healthCost}");
         
         if (ability.turnCost > 1)
-            costs.Add($"⏱{ability.turnCost}");
+            costs.Add($"⏱️{ability.turnCost}");
 
         return costs.Count > 0 ? string.Join(" ", costs) : "Gratis";
     }
@@ -455,8 +456,6 @@ private void OnDisable()
     void HandleAttemptsChanged(int remainingAttempts)
     {
         intentosText.text = remainingAttempts.ToString();
-        UpdatePlayerLifeUI();
-        UpdateCardsDisplay();
     }
 
     void UpdateModeUI()
@@ -564,7 +563,15 @@ private void OnDisable()
         else
         {
             // No hay maldición, ir directo al siguiente enemigo
-            combatManager.ContinueToNextEnemy();
+            if (bossRushManager != null)
+            {
+                combatManager.ResetPostCombatFlag();
+                bossRushManager.ContinueToNextCombat();
+            }
+            else
+            {
+                Debug.LogError("BossRushManager no asignado en CombatManagerUI");
+            }
         }
     }
 
@@ -574,7 +581,16 @@ private void OnDisable()
     void OnDefeatPanelContinue()
     {
         defeatPanel.SetActive(false);
-        combatManager.ContinueToNextEnemy();
+        
+        if (bossRushManager != null)
+        {
+            combatManager.ResetPostCombatFlag();
+            bossRushManager.ContinueToNextCombat();
+        }
+        else
+        {
+            Debug.LogError("BossRushManager no asignado en CombatManagerUI");
+        }
     }
 
     /// <summary>
